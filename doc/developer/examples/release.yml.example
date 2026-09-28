@@ -1,0 +1,59 @@
+# Design example only. Required scripts and runner isolation do not exist yet.
+# Pin checkout to a verified full commit SHA before activating this workflow.
+name: Test and release
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: [self-hosted, diet-ci-ephemeral]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test with disposable local dependencies
+        run: ./scripts/ci.sh
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: [self-hosted, diet-release]
+    environment: production
+    concurrency:
+      group: diet-production
+      cancel-in-progress: false
+    timeout-minutes: 30
+    env:
+      RELEASE_SHA: ${{ github.sha }}
+      DEPLOY_HOST: '114.32.210.249'
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+      DEPLOY_PLATFORM: ${{ vars.DEPLOY_PLATFORM }}
+      REGISTRY_HOST: ${{ vars.REGISTRY_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build and publish immutable images to the local registry
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: ./scripts/publish.sh "$RELEASE_SHA"
+      - name: Request the locked host-side deployment
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: ./scripts/request-deploy.sh "$RELEASE_SHA"
+
+# publish.sh must create a host-readable release manifest with both image
+# digests and expected schema revision. Never deploy a mutable tag alone.
+# request-deploy.sh must use StrictHostKeyChecking=yes, temporary key files
+# with mode 0600 and cleanup traps, and a restricted remote command.
+# The host command must retain its lock through migrations and smoke tests,
+# including when the SSH client disconnects or the Actions job times out.

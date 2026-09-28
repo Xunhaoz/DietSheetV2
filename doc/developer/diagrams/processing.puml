@@ -1,0 +1,60 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+title DietSheet - Durable upload and analysis
+actor Owner
+participant "FastAPI" as API
+database "PostgreSQL" as DB
+participant "Local object storage" as S3
+participant "Celery Beat / dispatcher" as D
+queue RabbitMQ as Q
+participant "Celery worker" as W
+participant "Gemini API" as AI
+Owner -> API : POST /meals + photo + idempotency key
+API -> API : Authenticate, validate, hash
+API -> DB : Check replay/conflict
+alt Existing matching live meal
+  API --> Owner : 200 existing receipt
+else New submission
+  API -> S3 : Store immutable source
+  API -> DB : Transaction: meal + media + image job + outbox
+  API --> Owner : 202 meal ID + job URL
+end
+loop Dispatch and reconcile
+  D -> DB : Read committed due outbox events
+  D -> Q : Publish job ID; require confirmation
+  Q --> D : Confirm
+  D -> DB : Mark published
+end
+Q -> W : Image job ID (may redeliver)
+W -> DB : Claim lease; increment bounded attempt
+W -> S3 : Read source; write display/AI/WebP variants
+W -> DB : Transaction: metadata + image success
+note right of DB
+  Same transaction creates analysis job + outbox.
+  Immutable object writes precede metadata commit.
+end note
+D -> Q : Publish analysis job ID
+Q -> W : Analysis job
+W -> DB : Claim lease; read input revision
+W -> S3 : Read low-resolution AI image
+W -> AI : Image + meal type/notes
+AI --> W : Structured estimate or error
+alt Valid response and revision/lease still current
+  W -> DB : Transaction: result + current selection\n+ job succeeded/unrecognized
+else Transient error and attempts remain
+  W -> DB : Persist retry_wait and due time
+  W -> Q : Celery bounded retry
+else Terminal error or obsolete revision
+  W -> DB : Mark failed/cancelled as appropriate
+end
+W -> Q : Acknowledge
+Owner -> API : Poll job; refresh meal/day
+API -> DB : Read authoritative state
+API --> Owner : State + available images + nullable totals
+note over D,W
+  Dispatcher confirms publication; consumers deduplicate by job ID.
+  Reconcile missing delivery and expired leases after recovery.
+  DB commit is idempotent; provider charges may repeat after a crash.
+end note
+@enduml

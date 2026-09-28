@@ -1,0 +1,70 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100/
+.Trashes/
+.fseventsd/
+
+# Local editor state
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+secrets/
+*.pem
+*.key
+
+# Frontend dependencies and build output
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Python environments, caches and package output
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# Test output and logs
+.coverage
+.coverage.*
+coverage/
+htmlcov/
+playwright-report/
+test-results/
+*.log
+logs/
+
+# Local runtime data, imports and backups
+/data/
+/volumes/
+/backups/
+/uploads/
+/imports/
+/exports/
+/tmp/
+/temp/
+*.sqlite3
+*.sqlite3-*
+celerybeat-schedule*
+celerybeat.pid
+
+# Keep dependency lockfiles, migrations, documentation and diagram previews tracked.

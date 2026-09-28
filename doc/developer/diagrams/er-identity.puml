@@ -1,0 +1,53 @@
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+hide circle
+title DietSheet - Identity and infrastructure ER
+entity app_user {
+  * id : uuid <<PK>>
+  {field} * username : varchar(100) <<UNIQUE>>
+  * password_hash : text
+  {field} * time_zone : varchar(64)
+  * is_active : boolean
+  * created_at : timestamptz
+  * updated_at : timestamptz
+}
+entity auth_session {
+  * id : uuid <<PK>>
+  user_id : uuid ? <<FK>>
+  {field} * token_digest : char(64) <<UNIQUE>>
+  {field} * csrf_digest : char(64)
+  * expires_at : timestamptz <<INDEX>>
+  * created_at : timestamptz
+}
+entity rate_limit_bucket {
+  {field} * key_digest : char(64) <<PK>>
+  * scope : varchar
+  * window_started_at : timestamptz
+  * count : int
+  * expires_at : timestamptz <<INDEX>>
+}
+entity alembic_version {
+  {field} * version_num : varchar(32) <<PK>>
+}
+app_user |o--o{ auth_session : authenticates
+note bottom of auth_session
+  Anonymous sessions support pre-login CSRF.
+  Rotate on login; delete on logout/password reset.
+  Store token digests, never bearer tokens.
+end note
+note bottom of rate_limit_bucket
+  Shared atomic counters for login/upload throttling.
+  Key includes scope and hashed client/account identity.
+  Expired counters and sessions are periodically removed.
+end note
+note bottom of alembic_version
+  Alembic-managed revision metadata.
+  Enforce a single migration head in CI.
+end note
+legend bottom
+  * = NOT NULL; ? = nullable
+  All domain owner foreign keys reference app_user.id.
+endlegend
+@enduml
