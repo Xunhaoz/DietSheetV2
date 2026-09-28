@@ -6,7 +6,7 @@ skinparam componentStyle rectangle
 title DietSheet - Self-hosted architecture
 actor Owner
 cloud "GitHub Actions\nWorkflow control" as github
-cloud "Gemini API\nExternal AI only" as gemini
+cloud "Gemini API\nAI analysis" as gemini
 node "Owner-controlled infrastructure" {
   component "Isolated local runners\nLocal container registry" as delivery
   node "Application host: 114.32.210.249" {
@@ -38,7 +38,6 @@ delivery ..> edge : verified host deployment
 db --> backup
 objects --> backup
 legend bottom
-  No Amazon services. Only HTTPS is public.
   Database, queue, object storage and registry remain private.
   Deployment and recovery details: delivery.md
 endlegend

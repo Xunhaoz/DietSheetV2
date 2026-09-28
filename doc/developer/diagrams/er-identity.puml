@@ -35,7 +35,7 @@ app_user |o--o{ auth_session : authenticates
 note bottom of auth_session
   Anonymous sessions support pre-login CSRF.
   Rotate on login; delete on logout/password reset.
-  Store token digests, never bearer tokens.
+  Store SHA-256 token digests.
 end note
 note bottom of rate_limit_bucket
   Shared atomic counters for login/upload throttling.

@@ -128,11 +128,11 @@ meal |o--o| nutrition_result : selects current
 note bottom of nutrition_result
   Current selection uses a same-meal composite FK.
   AI jobs/results must share meal ownership.
-  Imported results may have no job and partial nutrients.
+  Imported results allow a null job reference and partial nutrients.
 end note
 legend bottom
   * = NOT NULL; ? = nullable; PK = primary key; FK = foreign key
   Crow's foot = many; circle = optional; bar = one
-  Files live in object storage; media_object stores metadata only.
+  Files live in object storage; media_object stores metadata.
 endlegend
 @enduml

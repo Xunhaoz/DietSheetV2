@@ -1,6 +1,6 @@
 # DietSheet design
 
-Status: proposed, documentation only. Baseline: [`5edb1bd`](https://github.com/Xunhaoz/DeitSheet/tree/5edb1bd8f972376e3d9d6ddb3caf684fdbd200ce), plus the supplied Apps Script. No application, infrastructure, or workflow changes are activated by this draft.
+Status: proposed design. Baseline: [`5edb1bd`](https://github.com/Xunhaoz/DeitSheet/tree/5edb1bd8f972376e3d9d6ddb3caf684fdbd200ce), plus the supplied Apps Script.
 
 | Document | Purpose |
 | --- | --- |
@@ -12,9 +12,9 @@ Status: proposed, documentation only. Baseline: [`5edb1bd`](https://github.com/X
 
 Deployment target: **114.32.210.249**, with external access. Assume one owner initially; every domain record is owner-scoped. Hardware capacity is sufficient according to the owner. CPU architecture, public hostname, SSH identity/port and backup destination remain deployment parameters.
 
-Host application services, PostgreSQL, object storage, queue, container registry and CI execution locally. No AWS services. Gemini remains the explicitly permitted external AI service. GitHub Actions remains the requested workflow control plane; self-hosted runners execute jobs. Package downloads and certificate issuance are operational network dependencies.
+Host application services, PostgreSQL, object storage, queue, container registry and CI execution locally. Gemini provides external AI analysis. GitHub Actions coordinates workflows; self-hosted runners execute jobs. Package downloads and certificate issuance are operational network dependencies.
 
-Interpret “object database” as **S3-compatible object storage for photos**; PostgreSQL stores structured data and object metadata. An object-oriented database would serve a different requirement.
+Store photos in local **S3-compatible object storage**; PostgreSQL stores structured data and object metadata.
 
 ## Implementation order
 
@@ -43,4 +43,4 @@ java -jar plantuml.jar --check-syntax doc/developer/diagrams/*.puml
 java -jar plantuml.jar -tsvg doc/developer/diagrams/*.puml
 ```
 
-Sources were consulted on 2026-09-28. Framework capabilities are linked next to the relevant decisions; sizing, limits and latency budgets are proposed project requirements, not measured results.
+Sources were consulted on 2026-09-28. Framework capabilities are linked next to the relevant decisions; sizing, limits and latency budgets are project requirements to validate on the target host.

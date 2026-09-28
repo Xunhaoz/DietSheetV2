@@ -1,4 +1,4 @@
-# Design example only. Required scripts and runner isolation do not exist yet.
+# Workflow template. Implement the referenced scripts and isolated runners before activation.
 # Pin checkout to a verified full commit SHA before activating this workflow.
 name: Test and release
 on:
@@ -52,7 +52,7 @@ jobs:
         run: ./scripts/request-deploy.sh "$RELEASE_SHA"
 
 # publish.sh must create a host-readable release manifest with both image
-# digests and expected schema revision. Never deploy a mutable tag alone.
+# digests and expected schema revision. Deploy the recorded image digests.
 # request-deploy.sh must use StrictHostKeyChecking=yes, temporary key files
 # with mode 0600 and cleanup traps, and a restricted remote command.
 # The host command must retain its lock through migrations and smoke tests,
