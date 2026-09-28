@@ -2,9 +2,148 @@
 
 ## Relational model
 
-The [domain ER](diagrams/er-domain.puml) and [identity ER](diagrams/er-identity.puml) cover all proposed tables, including sessions and Alembic version metadata. Beat uses a static schedule; PostgreSQL job rows hold outcomes.
+The domain and identity ER diagrams below cover all proposed tables, including sessions and Alembic version metadata. Beat uses a static schedule; PostgreSQL job rows hold outcomes.
 
-![Domain ER](diagrams/er-domain.svg)
+```plantuml
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam linetype ortho
+hide circle
+title DietSheet - Domain ER (see identity ER for accounts)
+entity "app_user\n(identity ER)" as user {
+  * id : uuid <<PK>>
+}
+entity meal {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK>>
+  {field} * request_id : varchar(80)
+  {field} * request_hash : char(64)
+  captured_at : timestamptz ?
+  meal_type : enum ?
+  notes : text ?
+  current_result_id : uuid ? <<FK>>
+  * analysis_revision : int
+  * version : int
+  * created_at : timestamptz
+  * updated_at : timestamptz
+  deleted_at : timestamptz ?
+  --
+  UNIQUE(user_id, request_id)
+  captured_at/type required for live meals
+}
+entity media_object {
+  * id : uuid <<PK>>
+  * meal_id : uuid <<FK>>
+  * kind : source | display | ai | thumb
+  * processor_version : int
+  * object_key : text <<UNIQUE>>
+  {field} * sha256 : char(64)
+  * content_type : varchar
+  * byte_size : bigint
+  * width : int
+  * height : int
+  * created_at : timestamptz
+  --
+  UNIQUE(meal_id, kind, processor_version)
+}
+entity job {
+  * id : uuid <<PK>>
+  * meal_id : uuid <<FK>>
+  * kind : image | analysis | purge
+  * revision : int
+  {field} request_key : varchar(80) ?
+  * input_snapshot : jsonb
+  * state : enum
+  * attempts : int
+  next_attempt_at : timestamptz ?
+  lease_token : uuid ?
+  lease_expires_at : timestamptz ?
+  error_code : varchar ?
+  * created_at : timestamptz
+  * updated_at : timestamptz
+  --
+  UNIQUE(meal_id, kind, revision)
+  UNIQUE(meal_id, request_key) when non-null
+}
+entity outbox_event {
+  * id : uuid <<PK>>
+  * job_id : uuid <<FK, UNIQUE>>
+  * available_at : timestamptz
+  published_at : timestamptz ?
+  * created_at : timestamptz
+}
+entity nutrition_result {
+  * id : uuid <<PK>>
+  * meal_id : uuid <<FK>>
+  job_id : uuid ? <<FK, UNIQUE>>
+  * revision : int
+  * source : ai | import
+  recognized : boolean ?
+  {field} calories_kcal : numeric(10,1) ?
+  {field} carbs_g : numeric(10,1) ?
+  {field} protein_g : numeric(10,1) ?
+  {field} fat_g : numeric(10,1) ?
+  {field} fiber_g : numeric(10,1) ?
+  * foods : text
+  assumptions : text ?
+  model : varchar ?
+  prompt_version : varchar ?
+  * created_at : timestamptz
+  --
+  UNIQUE(meal_id, id)
+}
+entity nutrition_goal {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK>>
+  * effective_date : date
+  {field} calories_kcal : numeric(10,1) ?
+  {field} carbs_g : numeric(10,1) ?
+  {field} protein_g : numeric(10,1) ?
+  {field} fat_g : numeric(10,1) ?
+  {field} fiber_g : numeric(10,1) ?
+  * version : int
+  * created_at : timestamptz
+  * updated_at : timestamptz
+  --
+  UNIQUE(user_id, effective_date)
+}
+entity body_measurement {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK>>
+  * measured_at : timestamptz
+  {field} * weight_kg : numeric(8,2)
+  {field} height_cm : numeric(8,2) ?
+  {field} body_fat_pct : numeric(5,2) ?
+  {field} skeletal_muscle_kg : numeric(8,2) ?
+  {field} bmr_kcal : numeric(8,1) ?
+  * notes : text
+  * version : int
+  * created_at : timestamptz
+  * updated_at : timestamptz
+}
+user ||--o{ meal : owns
+user ||--o{ nutrition_goal : owns
+user ||--o{ body_measurement : owns
+meal ||--o{ media_object : stores
+meal ||--o{ job : schedules
+job ||--o| outbox_event : dispatches
+meal ||--o{ nutrition_result : history
+job |o--o| nutrition_result : produces
+meal |o--o| nutrition_result : selects current
+note bottom of nutrition_result
+  Current selection uses a same-meal composite FK.
+  AI jobs/results must share meal ownership.
+  Imported results allow a null job reference and partial nutrients.
+end note
+legend bottom
+  * = NOT NULL; ? = nullable; PK = primary key; FK = foreign key
+  Crow's foot = many; circle = optional; bar = one
+  Files live in object storage; media_object stores metadata.
+endlegend
+@enduml
+```
 
 Application IDs are UUIDs. `?` denotes nullable. Timestamps use UTC `timestamptz`; effective goal dates use the user's IANA timezone, initially `Asia/Taipei`. Keep that reporting timezone fixed in v1. Nutrients are `numeric(10,1)`; physical measurements are `numeric(8,2)` unless indicated.
 
@@ -25,7 +164,61 @@ Foreign keys restrict accidental physical deletion. Purge explicitly clears `cur
 
 BMI and body-fat mass are derived from a measurement's weight/height/fat percentage when available. Store skeletal muscle mass and BMR as entered measurements. Import body measurements after owner confirmation.
 
-![Identity ER](diagrams/er-identity.svg)
+```plantuml
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+hide circle
+title DietSheet - Identity and infrastructure ER
+entity app_user {
+  * id : uuid <<PK>>
+  {field} * username : varchar(100) <<UNIQUE>>
+  * password_hash : text
+  {field} * time_zone : varchar(64)
+  * is_active : boolean
+  * created_at : timestamptz
+  * updated_at : timestamptz
+}
+entity auth_session {
+  * id : uuid <<PK>>
+  user_id : uuid ? <<FK>>
+  {field} * token_digest : char(64) <<UNIQUE>>
+  {field} * csrf_digest : char(64)
+  * expires_at : timestamptz <<INDEX>>
+  * created_at : timestamptz
+}
+entity rate_limit_bucket {
+  {field} * key_digest : char(64) <<PK>>
+  * scope : varchar
+  * window_started_at : timestamptz
+  * count : int
+  * expires_at : timestamptz <<INDEX>>
+}
+entity alembic_version {
+  {field} * version_num : varchar(32) <<PK>>
+}
+app_user |o--o{ auth_session : authenticates
+note bottom of auth_session
+  Anonymous sessions support pre-login CSRF.
+  Rotate on login; delete on logout/password reset.
+  Store SHA-256 token digests.
+end note
+note bottom of rate_limit_bucket
+  Shared atomic counters for login/upload throttling.
+  Key includes scope and hashed client/account identity.
+  Expired counters and sessions are periodically removed.
+end note
+note bottom of alembic_version
+  Alembic-managed revision metadata.
+  Enforce a single migration head in CI.
+end note
+legend bottom
+  * = NOT NULL; ? = nullable
+  All domain owner foreign keys reference app_user.id.
+endlegend
+@enduml
+```
 
 Store Argon2id password hashes via a maintained library such as pwdlib, and SHA-256 digests of cryptographically random session/CSRF tokens. A nullable session owner supports the pre-login CSRF flow. Rotate the session on login and password reset; revoke on logout; expire authenticated sessions after 24 hours and pre-login sessions after 10 minutes. Alembic owns `alembic_version`.
 

@@ -27,20 +27,11 @@ Public hostname/TLS, deployment credentials and CPU architecture must be supplie
 
 ## Diagrams
 
-All diagrams use PlantUML. The domain and identity ER diagrams together cover the proposed database. SVG files are generated previews; `.puml` files are authoritative.
+Diagrams are embedded as `plantuml` code blocks in the documents. Edit these blocks to update the diagrams.
 
-| Diagram | Source | Preview |
-| --- | --- | --- |
-| Architecture | [PlantUML](diagrams/architecture.puml) | [SVG](diagrams/architecture.svg) |
-| Domain ER | [PlantUML](diagrams/er-domain.puml) | [SVG](diagrams/er-domain.svg) |
-| Identity ER | [PlantUML](diagrams/er-identity.puml) | [SVG](diagrams/er-identity.svg) |
-| Upload and analysis | [PlantUML](diagrams/processing.puml) | [SVG](diagrams/processing.svg) |
-
-Render locally with a pinned PlantUML JAR and Java:
-
-```sh
-java -jar plantuml.jar --check-syntax doc/developer/diagrams/*.puml
-java -jar plantuml.jar -tsvg doc/developer/diagrams/*.puml
-```
+| Diagram | Document |
+| --- | --- |
+| Architecture and processing | [Design](design.md) |
+| Domain and identity ER | [Data](data.md) |
 
 Sources were consulted on 2026-09-28. Framework capabilities are linked next to the relevant decisions; sizing, limits and latency budgets are project requirements to validate on the target host.

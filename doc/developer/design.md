@@ -49,7 +49,52 @@ Missing targets disable progress; missing nutrition remains unknown. Partial tot
 
 ## Architecture
 
-![Architecture](diagrams/architecture.svg)
+```plantuml
+@startuml
+!pragma layout smetana
+skinparam monochrome true
+skinparam shadowing false
+skinparam componentStyle rectangle
+title DietSheet - Self-hosted architecture
+actor Owner
+cloud "GitHub Actions\nWorkflow control" as github
+cloud "Gemini API\nAI analysis" as gemini
+node "Owner-controlled infrastructure" {
+  component "Isolated local runners\nLocal container registry" as delivery
+  node "Application host: 114.32.210.249" {
+    component "Caddy\nHTTPS" as edge
+    component "Frontend\nStatic ES modules" as web
+    rectangle "Private Compose network" {
+      component "FastAPI" as api
+      component "Celery Beat" as beat
+      queue "RabbitMQ" as broker
+      component "Celery worker" as worker
+      database "PostgreSQL\nData / jobs / outbox" as db
+      storage "SeaweedFS mini\nPrivate object storage" as objects
+    }
+  }
+  storage "Separate disk / NAS\nEncrypted paired backups" as backup
+}
+Owner --> edge : HTTPS
+edge --> web : assets
+edge --> api : API / media
+api --> db : SQL
+api --> objects : S3 protocol
+beat --> broker : scheduled dispatch
+broker --> worker : durable jobs
+worker --> db : claims / results
+worker --> objects : image variants
+worker --> gemini : AI image + notes
+github --> delivery : tests / release
+delivery ..> edge : verified host deployment
+db --> backup
+objects --> backup
+legend bottom
+  Database, queue, object storage and registry remain private.
+  Deployment and recovery details: delivery.md
+endlegend
+@enduml
+```
 
 | Component | Proposed choice and responsibility |
 | --- | --- |
@@ -81,7 +126,68 @@ Accept JPEG, PNG or WebP up to 15 MiB and 24 megapixels. Verify decoded content,
 
 Limit output dimensions to the source dimensions. Strip metadata from all derivatives, convert to sRGB, flatten transparency on white, and retain ratio. Store dimensions to reserve layout space; use `aspect-ratio` and `object-fit: contain`. Quality limits require verification on real food photos. Imported image quality is limited by the source. [Pillow orientation operations](https://pillow.readthedocs.io/en/stable/reference/ImageOps.html).
 
-![Processing](diagrams/processing.svg)
+```plantuml
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+title DietSheet - Durable upload and analysis
+actor Owner
+participant "FastAPI" as API
+database "PostgreSQL" as DB
+participant "Local object storage" as S3
+participant "Celery Beat / dispatcher" as D
+queue RabbitMQ as Q
+participant "Celery worker" as W
+participant "Gemini API" as AI
+Owner -> API : POST /meals + photo + idempotency key
+API -> API : Authenticate, validate, hash
+API -> DB : Check replay/conflict
+alt Existing matching live meal
+  API --> Owner : 200 existing receipt
+else New submission
+  API -> S3 : Store immutable source
+  API -> DB : Transaction: meal + media + image job + outbox
+  API --> Owner : 202 meal ID + job URL
+end
+loop Dispatch and reconcile
+  D -> DB : Read committed due outbox events
+  D -> Q : Publish job ID; require confirmation
+  Q --> D : Confirm
+  D -> DB : Mark published
+end
+Q -> W : Image job ID (may redeliver)
+W -> DB : Claim lease; increment bounded attempt
+W -> S3 : Read source; write display/AI/WebP variants
+W -> DB : Transaction: metadata + image success
+note right of DB
+  Same transaction creates analysis job + outbox.
+  Immutable object writes precede metadata commit.
+end note
+D -> Q : Publish analysis job ID
+Q -> W : Analysis job
+W -> DB : Claim lease; read input revision
+W -> S3 : Read low-resolution AI image
+W -> AI : Image + meal type/notes
+AI --> W : Structured estimate or error
+alt Valid response and revision/lease still current
+  W -> DB : Transaction: result + current selection\n+ job succeeded/unrecognized
+else Transient error and attempts remain
+  W -> DB : Persist retry_wait and due time
+  W -> Q : Celery bounded retry
+else Terminal error or obsolete revision
+  W -> DB : Mark failed/cancelled as appropriate
+end
+W -> Q : Acknowledge
+Owner -> API : Poll job; refresh meal/day
+API -> DB : Read authoritative state
+API --> Owner : State + available images + nullable totals
+note over D,W
+  Dispatcher confirms publication; consumers deduplicate by job ID.
+  Reconcile missing delivery and expired leases after recovery.
+  DB commit is idempotent; provider charges may repeat after a crash.
+end note
+@enduml
+```
 
 1. API authenticates and validates upload; stores source under a unique staging key. In one DB transaction, create meal, source metadata, image job and outbox event. Respond `202` after persistence; AI analysis runs asynchronously.
 2. Celery Beat schedules outbox dispatch/reconciliation every 10 seconds. Dispatcher publishes persistent messages with publisher confirms, then marks the event published. A crash between these steps may duplicate delivery.
