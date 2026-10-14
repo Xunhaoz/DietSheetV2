@@ -4,17 +4,13 @@ Guide to the proposed self-hosted version.
 
 ## Daily use
 
-1. Open the operator-provided HTTPS website. V1 automatically uses its built-in application token; no sign-in is required.
+1. Open the operator-provided HTTPS website and sign in.
 2. Add a meal with a 3:4 or 4:3 photo, meal type, capture time and optional portion notes. JPEG, PNG and WebP are supported; maximum 15 MiB and 24 megapixels.
 3. A saved meal appears immediately. Image processing and nutrition analysis finish in the background. Use Retry to process a failed analysis again.
 4. Select a date to review totals. Open the daily gallery to see the entire day on one scrolling page; open any card for the full image and analysis assumptions.
 5. Use meal details to correct time, type or notes, or delete a record. Changing type/notes triggers new analysis. The previous estimate is marked stale while it is being replaced.
 
 Missing values are shown as unknown. Partial totals identify unfinished estimates. A value of 125% means the recorded amount is 25% above the target; the graph shows that excess. Percentages compare recorded intake with the selected target.
-
-## iPhone Shortcuts
-
-Configure the operator-provided application PAT in the shortcut as `Authorization: Bearer <token>`. Upload a photo and meal details to `POST /api/v1/meals` using a multipart form. Convert HEIC photos to JPEG and prepare a 3:4 or 4:3 image within the 15 MiB / 24-megapixel limits before submission. Generate an `Idempotency-Key` for each new meal and reuse it with the same submission after a timeout. The API returns a saved meal and background job; analysis may finish later. Use the configured HTTPS hostname.
 
 ## Body measurements and goals
 
@@ -27,6 +23,6 @@ The app supports a standard desktop layout, a compact Mac layout with the Dock v
 
 Application data and images are stored on the owner's host. Gemini receives the low-resolution meal photo and its meal type/notes for analysis.
 
-If analysis is delayed, the meal is still saved. If a refresh fails, keep the saved data visible and retry when the service returns. For an interrupted upload, retry the same submission. If a gallery page fails, retry loading that page. If API authentication fails, ask the operator to update the application token in the website and shortcut. Ask the operator to restore a backup when needed.
+If analysis is delayed, the meal is still saved. If a refresh fails, keep the saved data visible and retry when the service returns. For an interrupted upload, retry the same submission. If a gallery page fails, retry loading that page. Ask the operator to reset a forgotten password or restore a backup.
 
 Operators should follow the [deployment and recovery guide](../developer/delivery.md). Use the configured HTTPS hostname to access the application.

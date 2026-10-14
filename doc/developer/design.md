@@ -10,7 +10,7 @@
 | `renderEnergy()`, `renderNutrients()` | Percentage text exceeds 100%; donut/bar geometry is capped | Make overflow visually proportional |
 | `src/data.js` | Fetches export pages, then filters and aggregates in the browser | Date-scoped reads and server-side summaries |
 | `src/styles.css` | Grayscale, dark sidebar, pale background, rounded white cards; square thumbnails and fixed-height detail crops | Retain style; preserve 3:4 and 4:3 photo ratios |
-| Supplied Apps Script | JPEG up to 600 KiB, Base64 split across 21 cells; token-authenticated upload/export | Binary uploads, private object storage and shared PAT authentication |
+| Supplied Apps Script | JPEG up to 600 KiB, Base64 split across 21 cells; token-authenticated upload/export | Binary uploads, private object storage and session authentication |
 | Supplied `processQueue()` | Minute trigger claims one record; leases and up to three attempts | Durable framework queue with idempotent workers |
 | Supplied export | Nutrient nulls preserved; temporary photo URLs; limited analysis metadata | Explicit processing state, uncertainty and stable authenticated media URLs |
 
@@ -20,8 +20,7 @@ The baseline consists of the frontend repository and the separately supplied App
 
 | Journey | Intended behavior |
 | --- | --- |
-| Open the app | Frontend automatically sends its hardcoded owner PAT; no sign-in form in v1 |
-| Record through iPhone Shortcuts | Send the configured PAT and a multipart meal upload with an idempotency key |
+| Sign in | Owner account provisioned by the operator |
 | Record a meal | Choose photo, capture time, meal type and notes; show saved/processing immediately; retry a failed analysis |
 | Review a day | Overview links to `/day/YYYY-MM-DD`; chronological gallery groups all six meal types, with totals and pending/failed states |
 | Review one meal | Full uncropped display image, nutrients, notes, model and uncertainty; edit metadata or delete |

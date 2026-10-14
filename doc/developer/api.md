@@ -4,24 +4,21 @@ Base: same-origin `/api/v1`. JSON uses camelCase, UTC ISO-8601 timestamps with o
 
 ## Authentication and conventions
 
-V1 uses an operator-provisioned Personal Access Token (PAT) for both the website and iPhone Shortcuts. Hardcode the application PAT in the frontend configuration and configure the same PAT in the shortcut; send `Authorization: Bearer <token>` on every API and media request over HTTPS. This is an intentional single-owner convenience tradeoff: anyone who can read the frontend bundle can obtain the PAT and exercise the owner's API permissions. The frontend PAT is not a confidential credential.
-
-The API validates the PAT digest against an active owner and a non-revoked token record. There are no password login/logout endpoints, authentication cookies, sessions or CSRF tokens in v1. Accept authentication only through the Authorization header, never through a cookie or URL parameter. Browser requests use the application origin; do not enable cross-origin browser access. Native clients such as Shortcuts may omit Origin; a missing Origin is not an authentication failure. If Origin is present, validate it against the application origin. All clients still require a valid PAT.
-
-Keep Gemini, database, object-storage and broker credentials on the host; only the application PAT is embedded in the frontend. Rate-limit failed authentication by client IP and uploads by owner in middleware using shared PostgreSQL counters initially. Scope every resource lookup by the token's owner, including media/jobs. Owners and PATs are operator-provisioned; rotation replaces the frontend and shortcut token and revokes the old record.
-
-Lazy-load media with an authenticated fetch as images approach the viewport, convert the response to a Blob URL for image display, and revoke Blob URLs when discarded. Do not put the PAT in image URLs. iPhone Shortcuts uses multipart `POST /api/v1/meals` with `photo`, `capturedAt`, `mealType`, `notes` and an `Idempotency-Key`; keep that key and payload unchanged when retrying the same submission. Prepare the image before assigning the submission key: convert unsupported formats such as HEIC to JPEG, preserve or crop to 3:4 or 4:3, and enforce the existing 15 MiB / 24-megapixel limits.
+Use opaque server-side sessions: Secure, HttpOnly, SameSite=Lax cookie, DB revocation on logout, Origin validation and synchronizer CSRF tokens on login and every unsafe request. `GET /auth/csrf` establishes an anonymous session if needed and returns `{csrfToken}`; clients hold it in memory and send `X-CSRFToken`. Login rotates session and CSRF tokens and returns the new token. Store service credentials on the host. Rate-limit login and uploads in middleware using shared PostgreSQL counters initially. Scope every resource lookup by owner, including media/jobs. Accounts are operator-provisioned; browser requests use the application origin.
 
 Lists: `{items, nextCursor, total}`; default 50, maximum 100. Meals sort by `(capturedAt, id)` ascending; cursors contain the last tuple and filters, signed by the server. Gallery follows all pages. Concurrent edits may move records between pages; deduplicate by ID and refresh on mutation. `total` reflects that response's query and may change between pages.
 
-Errors: `{code, message, fields?, requestId}` with HTTP status. Use 400 for malformed input, 422 for field/schema validation, 401 for missing/invalid/revoked PAT or inactive owner, 403 for forbidden operations or rejected Origin, 404 for unavailable owner-scoped resources, 409 for conflicts, 412 for stale versions, 413 for size, 415 for unsupported image format, 429 for throttling, 503 for unavailable persistence. Normalize FastAPI exception responses to this contract.
+Errors: `{code, message, fields?, requestId}` with HTTP status. Use 400 for malformed input, 422 for field/schema validation, 401 for missing/expired session, 403 for CSRF/forbidden operations, 404 for unavailable owner-scoped resources, 409 for conflicts, 412 for stale versions, 413 for size, 415 for unsupported image format, 429 for throttling, 503 for unavailable persistence. Normalize FastAPI exception responses to this contract.
 
-Reads return ETags. PATCH/DELETE and replacement PUT require `If-Match`; absence returns 428. Creating a dated goal uses `If-None-Match: *`; an existing date returns 412. Private data uses `Cache-Control: private, no-cache`; conditional GET can return 304. Media responses use private max-age=300 and checksum ETags; clients clear in-memory data and Blob URLs after an authentication failure or token change.
+Reads return ETags. PATCH/DELETE and replacement PUT require `If-Match`; absence returns 428. Creating a dated goal uses `If-None-Match: *`; an existing date returns 412. Private data uses `Cache-Control: private, no-cache`; conditional GET can return 304. Media responses use private max-age=300 and checksum ETags; clients clear in-memory state on logout.
 
 ## Endpoints
 
 | Method and path | Request / response | Success |
 | --- | --- | --- |
+| GET `/auth/csrf` | Establish session if needed; return CSRF token | 200 |
+| POST `/auth/login` | `{username, password}` -> user and rotated CSRF token | 200 |
+| POST `/auth/logout` | Revoke session | 204 |
 | GET `/me` | `{id, timeZone}` | 200 |
 | POST `/meals` | Multipart `photo`, `capturedAt`, `mealType`, `notes`; `Idempotency-Key` required | 202 + meal and job URLs |
 | GET `/meals?date=...&cursor=...` | Day-scoped meal cards; alternatively bounded `from`/`to` dates | 200 |
@@ -40,7 +37,7 @@ Reads return ETags. PATCH/DELETE and replacement PUT require `If-Match`; absence
 | PATCH/DELETE `/body-measurements/{id}` | Correct entered fields / delete; version precondition | 200 / 204 |
 | GET `/media/{id}` | Authenticated display/thumb bytes; outside `/api/v1` | 200 / 304 |
 
-Body/goal create and update responses contain ID and version/ETag. The newest body record is the first history item. Profile timezone is operator-configured in v1. Derive ownership from the authenticated PAT. Date filters use local midnight through the next local midnight converted to UTC.
+Body/goal create and update responses contain ID and version/ETag. The newest body record is the first history item. Profile timezone is operator-configured in v1. Derive ownership from the authenticated session. Date filters use local midnight through the next local midnight converted to UTC.
 
 ## Meal contract and idempotency
 

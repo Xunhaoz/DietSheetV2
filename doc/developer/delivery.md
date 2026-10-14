@@ -23,7 +23,7 @@ Keep registry/runner infrastructure separate from application restarts. Use priv
 
 Store credentials in restricted host files mounted as Compose secrets: database, S3, broker, application signing key and Gemini key. Protect the mounted secret files with host filesystem permissions. Set public hostname, trusted proxy, reporting timezone and model through configuration. Use synthetic data in CI artifacts. Self-host fonts and API-doc assets.
 
-First installation: provision host/DNS/TLS, initialize volumes and registry credentials, pull pinned service images, run migrations, create the owner and a random PAT via the planned `python -m app.cli create-owner` command (store the digest in PostgreSQL), hardcode that PAT in the frontend configuration, configure the same PAT in iPhone Shortcuts, build the frontend, start services, then smoke-test authenticated reads/upload/gallery and a shortcut upload. No password is required. To rotate the PAT, provision a new record, update/rebuild the frontend and update the shortcut, then revoke the old record. The application PAT is intentionally visible in the frontend bundle; service credentials remain host-only.
+First installation: provision host/DNS/TLS, initialize volumes and registry credentials, pull pinned service images, run migrations, create the owner via `python -m app.cli create-owner` using interactive password input, start services, then smoke-test login/upload/gallery.
 
 ## Updates
 
@@ -73,9 +73,7 @@ Use pytest, real PostgreSQL integration tests, synthetic photos, a deterministic
 | Valid photo, rotated EXIF, invalid bytes or size limit | Upload/process | Correct dimensions/variants, stripped derivative metadata, rejected invalid input |
 | Same upload key; changed payload; broker offline | Submit and recover | One meal, conflict on change, persisted job eventually dispatched |
 | Worker crashes before/after commit; notes edited during AI | Redeliver job | Attempt cap holds, current revision preserved |
-| Valid PAT, another owner, missing/invalid/revoked PAT or inactive owner | Access/mutate meal and media | Bearer authentication and ownership enforced; tokens excluded from logs |
-| Same-origin browser, native request without Origin, disallowed Origin | Send authenticated requests | Browser and native requests succeed; disallowed Origin is rejected |
-| Hardcoded frontend PAT and configured shortcut PAT | Open gallery and upload through Shortcuts | Authenticated Blob images render; multipart upload succeeds; retry does not duplicate meal |
+| Valid session, another owner, missing CSRF or expired token | Access/mutate meal and media | Authorization and CSRF enforced; sensitive fields redacted |
 | Body history and unrelated meal/goal records | Correct one measurement | Only measurement changes; latest sidebar value updates |
 | Old release schema plus paired backup | Migrate, fail a smoke test, restore | Consistent DB/object state and safe rollback behavior |
 | Duplicate legacy IDs, nulls, missing photos, invalid dates | Import twice | Stable counts/totals, explicit exceptions, imported estimates preserved |
