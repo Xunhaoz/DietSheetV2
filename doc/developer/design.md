@@ -70,7 +70,7 @@ node "Owner-controlled infrastructure" {
       queue "RabbitMQ" as broker
       component "Celery worker" as worker
       database "PostgreSQL\nData / jobs / outbox" as db
-      storage "SeaweedFS mini\nPrivate object storage" as objects
+      storage "MinIO\nPrivate object storage" as objects
     }
   }
   storage "Separate disk / NAS\nEncrypted paired backups" as backup
@@ -102,12 +102,12 @@ endlegend
 | API | FastAPI + Pydantic, SQLAlchemy 2 and Alembic; validation, authorization, transactions, summaries and migrations |
 | Database | PostgreSQL; authoritative business data and job state |
 | Queue | Celery + RabbitMQ; delivery, acknowledgements, retries, routing and worker lifecycle |
-| Object storage | SeaweedFS `weed mini`, private S3 API; a replaceable S3 adapter |
+| Object storage | MinIO single-node single-drive, private S3 API; a replaceable S3 adapter |
 | Images | Pillow; deterministic, versioned transformations |
 | AI | Gemini adapter; configurable model, structured output validation; server-side credentials |
 | Edge | Caddy HTTPS proxy; static frontend service; `/api` and `/media` to API |
 
-FastAPI provides validation and OpenAPI integration; Alembic manages schema revisions. Celery handles durable background work. SeaweedFS mini provides a compact S3 deployment, with explicit credentials. Pin tested releases and container digests at implementation. [FastAPI](https://fastapi.tiangolo.com/), [Alembic](https://alembic.sqlalchemy.org/en/latest/tutorial.html), [Celery/RabbitMQ](https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/rabbitmq.html), [SeaweedFS mini](https://github.com/seaweedfs/seaweedfs/wiki/Quick-Start-with-weed-mini), [S3 credentials](https://github.com/seaweedfs/seaweedfs/wiki/S3-Credentials).
+FastAPI provides validation and OpenAPI integration; Alembic manages schema revisions. Celery handles durable background work. MinIO provides a single-process S3 deployment, with explicit credentials. Pin tested releases and container digests at implementation. [FastAPI](https://fastapi.tiangolo.com/), [Alembic](https://alembic.sqlalchemy.org/en/latest/tutorial.html), [Celery/RabbitMQ](https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/rabbitmq.html), [MinIO](https://github.com/minio/minio).
 
 Use one modular backend: `accounts`, `meals`, `media`, `nutrition`, `measurements`, `jobs`. HTTP handlers validate inputs and call application services; workers call the same services. Keep image transformation, nutrient calculation and provider calls independent.
 
