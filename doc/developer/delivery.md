@@ -16,7 +16,7 @@ Target Linux with Docker Engine/Compose; select `linux/amd64` or `linux/arm64` a
 | `migrate` | Same backend digest; one-shot `alembic upgrade head` |
 | `db` | PostgreSQL; database volume |
 | `broker` | RabbitMQ; durable queue volume |
-| `objects` | MinIO single-node single-drive; data volume including bucket metadata; mounted credential configuration |
+| `objects` | SeaweedFS mini; volume including filer/master/object data; mounted credential configuration |
 | `registry` | Local Distribution registry; filesystem volume, internal TLS and credentials |
 
 Keep registry/runner infrastructure separate from application restarts. Use private Compose networks, persistent named volumes, service health checks, non-root application containers and restart policies. API/worker reuse one backend image but run separate commands. Start with worker concurrency 2 and tune after measuring memory and Gemini limits. [Compose production](https://docs.docker.com/compose/how-tos/production/), [local registry](https://hub.docker.com/_/registry).
@@ -55,7 +55,7 @@ Planned script contracts: `ci.sh` creates disposable Compose dependencies, runs 
 
 ## Recovery and operating targets
 
-Nightly and pre-migration backups: pause writers and drain workers, take a PostgreSQL custom-format dump plus a coordinated snapshot of all MinIO data/metadata and required host configuration. Encrypt copies on a separate owner-controlled disk/NAS; retain 7 daily and 4 weekly backups. Rehearse restore into empty volumes, compare row/object checksums, and rebuild queued work from PostgreSQL. [PostgreSQL dumps](https://www.postgresql.org/docs/current/backup-dump.html).
+Nightly and pre-migration backups: pause writers and drain workers, take a PostgreSQL custom-format dump plus a coordinated snapshot of all SeaweedFS data/metadata and required host configuration. Encrypt copies on a separate owner-controlled disk/NAS; retain 7 daily and 4 weekly backups. Rehearse restore into empty volumes, compare row/object checksums, and rebuild queued work from PostgreSQL. [PostgreSQL dumps](https://www.postgresql.org/docs/current/backup-dump.html).
 
 Expose minimal `/health/live` and `/health/ready` responses; readiness requires DB and object storage, while broker/Gemini failures are reported as degraded background processing. Monitor oldest pending job, retry/failure counts, disk usage, backup age and request latency. Log request/job IDs and durations, excluding tokens, images and meal/body content.
 

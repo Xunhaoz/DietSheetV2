@@ -226,7 +226,7 @@ Store Argon2id password hashes via a maintained library such as pwdlib, and SHA-
 
 Use a private `diet-media` bucket with immutable keys `users/{userId}/meals/{mealId}/{processorVersion}/{variant}/{uuid}.{ext}`. PostgreSQL holds object keys, checksums, dimensions and content types. Browser access goes through authenticated `/media/{id}`; the API streams the object and supports private conditional caching. Backend services use host-mounted credentials to access source and AI variants through private object storage.
 
-Persist objects first, then commit metadata in a database transaction; orphan sweeping handles interrupted writes. Backups must cover both PostgreSQL and S3 data plus MinIO metadata/configuration.
+Persist objects first, then commit metadata in a database transaction; orphan sweeping handles interrupted writes. Backups must cover both PostgreSQL and S3 data plus SeaweedFS metadata/configuration.
 
 ## Google Sheets cutover
 
