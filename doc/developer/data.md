@@ -2,7 +2,7 @@
 
 ## Relational model
 
-The domain and identity ER diagrams below cover all proposed tables, including sessions and Alembic version metadata. Beat uses a static schedule; PostgreSQL job rows hold outcomes.
+The domain and identity ER diagrams below cover all proposed tables, including personal access tokens and Alembic version metadata. Beat uses a static schedule; PostgreSQL job rows hold outcomes.
 
 ```plantuml
 @startuml
@@ -174,19 +174,17 @@ title DietSheet - Identity and infrastructure ER
 entity app_user {
   * id : uuid <<PK>>
   {field} * username : varchar(100) <<UNIQUE>>
-  * password_hash : text
   {field} * time_zone : varchar(64)
   * is_active : boolean
   * created_at : timestamptz
   * updated_at : timestamptz
 }
-entity auth_session {
+entity personal_access_token {
   * id : uuid <<PK>>
-  user_id : uuid ? <<FK>>
+  * user_id : uuid <<FK>>
   {field} * token_digest : char(64) <<UNIQUE>>
-  {field} * csrf_digest : char(64)
-  * expires_at : timestamptz <<INDEX>>
   * created_at : timestamptz
+  revoked_at : timestamptz ?
 }
 entity rate_limit_bucket {
   {field} * key_digest : char(64) <<PK>>
@@ -198,16 +196,16 @@ entity rate_limit_bucket {
 entity alembic_version {
   {field} * version_num : varchar(32) <<PK>>
 }
-app_user |o--o{ auth_session : authenticates
-note bottom of auth_session
-  Anonymous sessions support pre-login CSRF.
-  Rotate on login; delete on logout/password reset.
-  Store SHA-256 token digests.
+app_user ||--o{ personal_access_token : owns
+note bottom of personal_access_token
+  Store SHA-256 digests of random PATs.
+  V1 frontend and shortcut share a provisioned PAT.
+  Revocation disables subsequent API authentication.
 end note
 note bottom of rate_limit_bucket
-  Shared atomic counters for login/upload throttling.
+  Shared atomic counters for failed authentication/upload throttling.
   Key includes scope and hashed client/account identity.
-  Expired counters and sessions are periodically removed.
+  Expired counters are periodically removed.
 end note
 note bottom of alembic_version
   Alembic-managed revision metadata.
@@ -220,7 +218,7 @@ endlegend
 @enduml
 ```
 
-Store Argon2id password hashes via a maintained library such as pwdlib, and SHA-256 digests of cryptographically random session/CSRF tokens. A nullable session owner supports the pre-login CSRF flow. Rotate the session on login and password reset; revoke on logout; expire authenticated sessions after 24 hours and pre-login sessions after 10 minutes. Alembic owns `alembic_version`.
+Generate cryptographically random PATs and store only their SHA-256 digests in PostgreSQL. Each token belongs to one active owner and remains valid until revoked in v1. Embed the provisioned plaintext application PAT in the frontend configuration and the iPhone shortcut as explicitly accepted for this single-owner version. Rotation provisions a replacement, updates both clients and revokes the old token. No password hashes, sessions or CSRF records are required. Alembic owns `alembic_version`.
 
 ## Object storage
 
