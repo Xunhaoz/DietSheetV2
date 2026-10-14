@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app import meals
 from app.storage import get_storage
 
 
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DietSheet", lifespan=lifespan)
+app.include_router(meals.router)
 
 
 @app.get("/health/live")
