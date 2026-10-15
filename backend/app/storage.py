@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -20,14 +22,18 @@ class ObjectStorage:
     def put(self, key: str, data: bytes, content_type: str) -> None:
         self.client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType=content_type)
 
+    def close(self) -> None:
+        self.client.close()
 
-storage = ObjectStorage(
-    boto3.client(
+
+@lru_cache
+def get_storage() -> ObjectStorage:
+    """Create the shared adapter on first use; tests replace it via dependency_overrides."""
+    client = boto3.client(
         "s3",
         endpoint_url=settings.s3_endpoint_url,
         aws_access_key_id=settings.s3_access_key,
         aws_secret_access_key=settings.s3_secret_key,
         region_name="us-east-1",
-    ),
-    settings.s3_bucket,
-)
+    )
+    return ObjectStorage(client, settings.s3_bucket)
