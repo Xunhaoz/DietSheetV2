@@ -5,7 +5,7 @@ Guide to the proposed self-hosted version.
 ## Daily use
 
 1. Open the operator-provided HTTPS website and sign in.
-2. Add a meal with a 3:4 or 4:3 photo, meal type, capture time and optional portion notes. JPEG, PNG and WebP are supported; maximum 15 MiB and 24 megapixels.
+2. Add a meal with a 3:4 or 4:3 photo, meal type, capture time and optional portion notes. Only JPEG is supported. Resize the photo so its long edge is at most 1024 px (for example 1024x768 or 768x1024); larger photos are rejected. Maximum file size is 2 MiB.
 3. A saved meal appears immediately. Image processing and nutrition analysis finish in the background. Use Retry to process a failed analysis again.
 4. Select a date to review totals. Open the daily gallery to see the entire day on one scrolling page; open any card for the full image and analysis assumptions.
 5. Use meal details to correct time, type or notes, or delete a record. Changing type/notes triggers new analysis. The previous estimate is marked stale while it is being replaced.

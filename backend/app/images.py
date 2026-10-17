@@ -3,11 +3,13 @@ from dataclasses import dataclass
 
 from PIL import Image, UnidentifiedImageError
 
-MAX_BYTES = 15 * 1024 * 1024
-MAX_PIXELS = 24_000_000
+# Clients resize the long edge to 1024 px before upload. A 1024x768 JPEG is at most
+# about 1.3 MiB even at quality 100 on pure noise, so 2 MiB leaves room for metadata.
+MAX_BYTES = 2 * 1024 * 1024
+MAX_LONG_EDGE = 1024
 
-CONTENT_TYPES = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
-EXTENSIONS = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}
+CONTENT_TYPE = "image/jpeg"
+EXTENSION = "jpg"
 
 # EXIF orientations 5-8 rotate by 90 degrees, swapping displayed width and height.
 _SWAPPING_ORIENTATIONS = {5, 6, 7, 8}
@@ -22,17 +24,10 @@ class InvalidImage(Exception):
 
 @dataclass(frozen=True)
 class ImageInfo:
-    format: str
     width: int
     height: int
-
-    @property
-    def content_type(self) -> str:
-        return CONTENT_TYPES[self.format]
-
-    @property
-    def extension(self) -> str:
-        return EXTENSIONS[self.format]
+    content_type: str = CONTENT_TYPE
+    extension: str = EXTENSION
 
 
 def inspect_image(data: bytes) -> ImageInfo:
@@ -40,21 +35,21 @@ def inspect_image(data: bytes) -> ImageInfo:
     try:
         image = Image.open(io.BytesIO(data))
     except UnidentifiedImageError:
-        raise InvalidImage(415, "Unsupported image format")
+        raise InvalidImage(415, "Only JPEG photos are supported")
     except Image.DecompressionBombError:
-        raise InvalidImage(413, "Image exceeds 24 megapixels")
+        raise InvalidImage(422, f"Photo long edge must be at most {MAX_LONG_EDGE} px")
     except OSError:
         # Recognised format, but the header or first bytes are damaged (e.g. truncated upload).
         raise InvalidImage(422, "Image data is corrupt")
 
     with image:
-        if image.format not in CONTENT_TYPES:
-            raise InvalidImage(415, "Only JPEG, PNG and WebP are supported")
-        if getattr(image, "n_frames", 1) > 1:
-            raise InvalidImage(415, "Animated images are not supported")
+        # Multi-picture JPEGs (MPO) report a different format and are rejected here too.
+        if image.format != "JPEG":
+            raise InvalidImage(415, "Only JPEG photos are supported")
         width, height = image.size
-        if width * height > MAX_PIXELS:
-            raise InvalidImage(413, "Image exceeds 24 megapixels")
+        # Checked before decoding so an oversized header cannot exhaust memory.
+        if max(width, height) > MAX_LONG_EDGE:
+            raise InvalidImage(422, f"Photo long edge must be at most {MAX_LONG_EDGE} px")
         try:
             image.load()
             orientation = image.getexif().get(0x0112)
@@ -65,7 +60,7 @@ def inspect_image(data: bytes) -> ImageInfo:
 
     if not (_matches_ratio(width, height, 3, 4) or _matches_ratio(width, height, 4, 3)):
         raise InvalidImage(422, "Photo must be 3:4 or 4:3")
-    return ImageInfo(image.format, width, height)
+    return ImageInfo(width, height)
 
 
 def _matches_ratio(width: int, height: int, ratio_w: int, ratio_h: int) -> bool:

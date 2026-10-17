@@ -115,16 +115,16 @@ Run stateless API replicas and separate image/AI workers only when load requires
 
 ## Images and background work
 
-Accept JPEG, PNG or WebP up to 15 MiB and 24 megapixels. Verify decoded content, reject animation and unsupported codecs, apply EXIF orientation, then validate ratio as 3:4 or 4:3 within one pixel of rounding. The UI previews the selected crop; the server preserves the submitted framing.
+Accept JPEG only, up to 2 MiB, with the long edge at most 1024 px (for example 1024x768 or 768x1024). Clients resize before upload; the server rejects larger photos with 422 instead of resizing them. Check dimensions before decoding, verify decoded content, reject other formats including multi-picture JPEG (MPO), apply EXIF orientation, then validate ratio as 3:4 or 4:3 within one pixel of rounding. The UI previews the selected crop; the server preserves the submitted framing.
 
 | Variant | Proposed encoding | Use |
 | --- | --- | --- |
 | `source` | Uploaded bytes; private, immutable | Private source for regenerating derivatives |
-| `display` | JPEG quality 90, longest edge <= 2560 px | Individual meal view |
-| `ai` | JPEG quality 75, longest edge <= 1024 px, <= 600 KiB | Provider input; lower quality/size until under budget |
+| `display` | JPEG quality 90, source dimensions (longest edge <= 1024 px) | Individual meal view |
+| `ai` | JPEG quality 75, source dimensions (longest edge <= 1024 px), <= 600 KiB | Provider input; lower quality/size until under budget |
 | `thumb` | WebP quality 75, longest edge <= 480 px | Gallery and dashboard |
 
-Limit output dimensions to the source dimensions. Strip metadata from all derivatives, convert to sRGB, flatten transparency on white, and retain ratio. Store dimensions to reserve layout space; use `aspect-ratio` and `object-fit: contain`. Quality limits require verification on real food photos. Imported image quality is limited by the source. [Pillow orientation operations](https://pillow.readthedocs.io/en/stable/reference/ImageOps.html).
+Limit output dimensions to the source dimensions. Because sources are at most 1024 px, the individual meal view shows at most 1024 px. Strip metadata from all derivatives, convert to sRGB and retain ratio. Store dimensions to reserve layout space; use `aspect-ratio` and `object-fit: contain`. Quality limits require verification on real food photos. Imported image quality is limited by the source. [Pillow orientation operations](https://pillow.readthedocs.io/en/stable/reference/ImageOps.html).
 
 ```plantuml
 @startuml
