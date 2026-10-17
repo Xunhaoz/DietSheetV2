@@ -2,9 +2,13 @@ from functools import lru_cache
 
 import boto3
 from botocore.config import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 
 from app.config import settings
+
+
+class StorageUnavailable(Exception):
+    """Object storage could not be reached or failed on its side; the request can be retried."""
 
 
 class ObjectStorage:
@@ -25,7 +29,15 @@ class ObjectStorage:
             self.client.create_bucket(Bucket=self.bucket)
 
     def put(self, key: str, data: bytes, content_type: str) -> None:
-        self.client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType=content_type)
+        try:
+            self.client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType=content_type)
+        except BotoCoreError as exc:  # connection errors and timeouts
+            raise StorageUnavailable from exc
+        except ClientError as exc:
+            # 5xx is an outage; 4xx such as bad credentials is a configuration bug and stays a 500.
+            if exc.response["ResponseMetadata"]["HTTPStatusCode"] >= 500:
+                raise StorageUnavailable from exc
+            raise
 
     def close(self) -> None:
         self.client.close()
