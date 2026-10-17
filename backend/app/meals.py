@@ -91,7 +91,7 @@ def create_meal(
     meal = Meal(
         id=meal_id,
         user_id=owner_id,
-        request_id=idempotency_key,
+        idempotency_key=idempotency_key,
         request_hash=request_hash,
         captured_at=captured_at,
         meal_type=meal_type,
@@ -133,8 +133,10 @@ def _request_hash(captured_at: datetime, meal_type: MealType, notes: str | None,
     return hashlib.sha256(json.dumps(normalized, sort_keys=True).encode()).hexdigest()
 
 
-def _find_by_request(session: Session, owner_id: UUID, request_id: str) -> Meal | None:
-    return session.scalar(select(Meal).where(Meal.user_id == owner_id, Meal.request_id == request_id))
+def _find_by_request(session: Session, owner_id: UUID, idempotency_key: str) -> Meal | None:
+    return session.scalar(
+        select(Meal).where(Meal.user_id == owner_id, Meal.idempotency_key == idempotency_key)
+    )
 
 
 def _replay(existing: Meal, request_hash: str, response: Response) -> Meal:

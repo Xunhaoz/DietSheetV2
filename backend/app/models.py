@@ -50,14 +50,15 @@ class MediaKind(str, enum.Enum):
 class Meal(Base):
     __tablename__ = "meal"
     __table_args__ = (
-        UniqueConstraint("user_id", "request_id"),
+        UniqueConstraint("user_id", "idempotency_key"),
         Index("ix_meal_user_captured", "user_id", "captured_at", "id"),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     # No app_user table yet; add the FK when accounts are implemented.
     user_id: Mapped[UUID]
-    request_id: Mapped[str] = mapped_column(String(80))
+    # Client-chosen Idempotency-Key; legacy Sheet requestId values are imported here.
+    idempotency_key: Mapped[str] = mapped_column(String(80))
     request_hash: Mapped[str] = mapped_column(String(64))
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     meal_type: Mapped[MealType] = mapped_column(Enum(MealType, name="meal_type"))

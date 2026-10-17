@@ -21,7 +21,7 @@ def upgrade() -> None:
         "meal",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("user_id", sa.Uuid(), nullable=False),
-        sa.Column("request_id", sa.String(80), nullable=False),
+        sa.Column("idempotency_key", sa.String(80), nullable=False),
         sa.Column("request_hash", sa.String(64), nullable=False),
         sa.Column("captured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("meal_type", meal_type, nullable=False),
@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_meal")),
-        sa.UniqueConstraint("user_id", "request_id", name=op.f("uq_meal_user_id_request_id")),
+        sa.UniqueConstraint("user_id", "idempotency_key", name=op.f("uq_meal_user_id_idempotency_key")),
     )
     op.create_index(op.f("ix_meal_user_captured"), "meal", ["user_id", "captured_at", "id"])
 

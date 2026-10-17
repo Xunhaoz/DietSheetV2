@@ -18,7 +18,7 @@ entity "app_user\n(identity ER)" as user {
 entity meal {
   * id : uuid <<PK>>
   * user_id : uuid <<FK>>
-  {field} * request_id : varchar(80)
+  {field} * idempotency_key : varchar(80)
   {field} * request_hash : char(64)
   captured_at : timestamptz ?
   meal_type : enum ?
@@ -30,7 +30,7 @@ entity meal {
   * updated_at : timestamptz
   deleted_at : timestamptz ?
   --
-  UNIQUE(user_id, request_id)
+  UNIQUE(user_id, idempotency_key)
   captured_at/type required for live meals
 }
 entity media_object {
@@ -150,7 +150,7 @@ Application IDs are UUIDs. `?` denotes nullable. Timestamps use UTC `timestamptz
 | Constraint / index | Rule |
 | --- | --- |
 | Meal ownership | All queries and media requests resolve through authenticated `user_id` |
-| Upload deduplication | Unique `(user_id, request_id)`; SHA-256 over normalized submitted metadata and source bytes; conflicts return 409 |
+| Upload deduplication | Unique `(user_id, idempotency_key)`, the client's `Idempotency-Key`; SHA-256 over normalized submitted metadata and source bytes; conflicts return 409 |
 | Meal lookup | Index `(user_id, captured_at, id)` for live meals; partial index on `deleted_at IS NULL` |
 | Result selection | Composite FK `(meal.id, current_result_id)` references unique `(result.meal_id, result.id)`; selected result must belong to this meal |
 | Result validation | Nullable nutrients represent unknown values; non-null values >= 0; fiber <= carbs when both known; recognized AI output requires all five values, unrecognized output requires all null |
@@ -160,7 +160,7 @@ Application IDs are UUIDs. `?` denotes nullable. Timestamps use UTC `timestamptz
 | Goal history | Unique `(user_id, effective_date)`; each target is positive or null (disabled); latest effective date <= viewed date wins |
 | Measurements | Index `(user_id, measured_at, id)`; positive weight/height, body fat percentage 0..100, other measurements nonnegative; weight required |
 
-Foreign keys restrict accidental physical deletion. Purge explicitly clears `current_result_id`, removes results/outbox/prior jobs/media, then strips meal content while retaining `id`, owner, request ID/hash and deletion timestamps. Retain the completed purge job with an empty input snapshot for status polling. Updates use a `version` counter; serialize competing writes under row locks. Goals and body records reference their owner independently.
+Foreign keys restrict accidental physical deletion. Purge explicitly clears `current_result_id`, removes results/outbox/prior jobs/media, then strips meal content while retaining `id`, owner, idempotency key, request hash and deletion timestamps. Retain the completed purge job with an empty input snapshot for status polling. Updates use a `version` counter; serialize competing writes under row locks. Goals and body records reference their owner independently.
 
 BMI and body-fat mass are derived from a measurement's weight/height/fat percentage when available. Store skeletal muscle mass and BMR as entered measurements. Import body measurements after owner confirmation.
 
@@ -232,10 +232,10 @@ Persist objects first, then commit metadata in a database transaction; orphan sw
 
 1. Back up the Sheet and disable writes and its minute trigger for a final consistent snapshot. Keep it read-only until reconciliation passes.
 2. Export all pages with `photos=none`, following `nextAfter`; fetch `photos=data&id=...` per record. Save a local manifest, checksum and import checkpoint.
-3. Preserve original `requestId` as a string (legacy IDs support 16–80 alphanumeric, underscore or hyphen characters). Map the six legacy labels to `breakfast`, `lunch`, `dinner`, `snack`, `late_snack`, `drink`. Preserve timestamps, all five nullable nutrients, notes and food descriptions.
+3. Preserve original `requestId` as a string in `idempotency_key` (legacy IDs support 16–80 alphanumeric, underscore or hyphen characters). Map the six legacy labels to `breakfast`, `lunch`, `dinner`, `snack`, `late_snack`, `drink`. Preserve timestamps, all five nullable nutrients, notes and food descriptions.
 4. The current export omits status, assumptions, model, received/updated timestamps and retry history. Extract those columns in a one-time read-only exporter or mark them unknown. Invalid timestamps/values and missing photos enter a reconciliation report for review.
 5. Create `source=import` results, retaining partial/null values. Import JPEG bytes as sources and generate derivatives with `analyzeAfter=false`. If a legacy ratio differs, pad the derivatives to the nearer allowed ratio; preserve source bytes and record the transformation. Create media jobs for records with image bytes.
-6. Upsert by owner + legacy request ID; skip unchanged hashes and report changed snapshots for review. Compare IDs, row counts, timezone/day totals, null counts and photo checksums. Resume safely after interruption.
+6. Upsert by owner + `idempotency_key` (the legacy request ID); skip unchanged hashes and report changed snapshots for review. Compare IDs, row counts, timezone/day totals, null counts and photo checksums. Resume safely after interruption.
 7. Offer an explicit one-time import of browser-local goals with an effective date. Body report values require owner confirmation. Switch the frontend only after reconciliation, then revoke legacy tokens and remove the embedded connection URL during implementation.
 
 Freeze Sheet writes during cutover. Before new-system writes start, rollback can return to the frozen Sheet. After new writes start, use a new-system backup/restore or an explicit reverse export to preserve subsequent records.
