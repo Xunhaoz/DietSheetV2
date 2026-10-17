@@ -7,6 +7,7 @@ from sqlalchemy.exc import OperationalError
 
 from app import meals
 from app.body_limit import BodySizeLimitMiddleware
+from app.db import engine
 from app.storage import StorageUnavailable, get_storage
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         storage.close()
+        engine.dispose()
 
 
 app = FastAPI(title="DietSheet", lifespan=lifespan)
