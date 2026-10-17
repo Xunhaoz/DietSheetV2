@@ -43,6 +43,9 @@ def inspect_image(data: bytes) -> ImageInfo:
         raise InvalidImage(415, "Unsupported image format")
     except Image.DecompressionBombError:
         raise InvalidImage(413, "Image exceeds 24 megapixels")
+    except OSError:
+        # Recognised format, but the header or first bytes are damaged (e.g. truncated upload).
+        raise InvalidImage(422, "Image data is corrupt")
 
     with image:
         if image.format not in CONTENT_TYPES:
@@ -54,9 +57,10 @@ def inspect_image(data: bytes) -> ImageInfo:
             raise InvalidImage(413, "Image exceeds 24 megapixels")
         try:
             image.load()
+            orientation = image.getexif().get(0x0112)
         except (OSError, SyntaxError):
             raise InvalidImage(422, "Image data is corrupt")
-        if image.getexif().get(0x0112) in _SWAPPING_ORIENTATIONS:
+        if orientation in _SWAPPING_ORIENTATIONS:
             width, height = height, width
 
     if not (_matches_ratio(width, height, 3, 4) or _matches_ratio(width, height, 4, 3)):
