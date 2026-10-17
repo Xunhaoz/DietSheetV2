@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Response, UploadFile, status
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import APIRouter, Depends, Form, Header, HTTPException, Response, UploadFile, status
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -24,6 +24,18 @@ SOURCE_PROCESSOR_VERSION = 1
 
 class CamelModel(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, from_attributes=True)
+
+
+class MealIn(CamelModel):
+    """Multipart form fields of an upload; unknown fields are rejected to surface client typos."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    photo: UploadFile
+    # AwareDatetime rejects timestamps without a timezone offset.
+    captured_at: AwareDatetime
+    meal_type: MealType
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 class MediaOut(CamelModel):
@@ -53,20 +65,16 @@ class MealOut(CamelModel):
 )
 def create_meal(
     response: Response,
-    photo: Annotated[UploadFile, File()],
-    captured_at: Annotated[datetime, Form(alias="capturedAt")],
-    meal_type: Annotated[MealType, Form(alias="mealType")],
+    meal_in: Annotated[MealIn, Form()],
     idempotency_key: Annotated[str, Header(pattern=r"^[A-Za-z0-9_-]{16,80}$")],
-    notes: Annotated[str | None, Form(max_length=2000)] = None,
     owner_id: UUID = Depends(current_owner),
     session: Session = Depends(get_session),
     storage: ObjectStorage = Depends(get_storage),
 ) -> Meal:
-    if captured_at.tzinfo is None:
-        raise HTTPException(422, "capturedAt must include a timezone offset")
-    notes = notes or None
+    captured_at, meal_type = meal_in.captured_at, meal_in.meal_type
+    notes = meal_in.notes or None
 
-    data = photo.file.read(MAX_BYTES + 1)
+    data = meal_in.photo.file.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
         raise HTTPException(413, f"Image exceeds {MAX_BYTES // (1024 * 1024)} MiB")
     try:

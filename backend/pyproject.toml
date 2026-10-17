@@ -3,7 +3,8 @@ name = "dietsheet-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115,<1",
+    # Form models containing UploadFile (MealIn) are tested on 0.143.
+    "fastapi>=0.143,<1",
     "uvicorn[standard]>=0.30,<1",
     "python-multipart>=0.0.9",
     "pydantic-settings>=2.4,<3",
