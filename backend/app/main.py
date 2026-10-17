@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import meals
+from app.body_limit import BodySizeLimitMiddleware
 from app.storage import get_storage
 
 
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DietSheet", lifespan=lifespan)
+app.add_middleware(BodySizeLimitMiddleware)
 app.include_router(meals.router)
 
 
