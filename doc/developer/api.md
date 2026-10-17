@@ -45,7 +45,7 @@ Meal fields: `id`, `capturedAt`, `mealType`, `notes`, `version`, `analysisRevisi
 
 - `processing`: separate image/analysis states and current `jobId`; use these states to display processing progress.
 - `nutrition`: null or `{source, revision, stale, recognized, foods, assumptions, model, caloriesKcal, carbsG, proteinG, fatG, fiberG}`. Model/recognized/assumptions may be null for imports.
-- `media`: available variants only, each `{id, kind, url, width, height}`. Include thumbnail on lists; display URL on details.
+- `media`: the meal's single photo as an object keyed by size variant, e.g. `{"thumb": {...}, "display": {...}}`; each value is `{id, url, width, height}`. Only available public variants (`display`, `thumb`) appear, so it is `{}` until processing produces them; `source` and `ai` stay private. Include thumbnail on lists; display URL on details.
 
 Persist meal upload idempotency for the tombstone's lifetime. A repeated key and matching payload returns the existing receipt (200); a changed payload or deleted meal returns 409. Use the same key after timeout. Server receipt time is excluded from the hash. Accept uploads after both object and database persistence succeed.
 

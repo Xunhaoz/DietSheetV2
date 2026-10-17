@@ -5,7 +5,7 @@ from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, Form, Header, HTTPException, Response, UploadFile, status
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -20,6 +20,8 @@ from app.storage import ObjectStorage, get_storage
 router = APIRouter(prefix="/api/v1")
 
 SOURCE_PROCESSOR_VERSION = 1
+# source is only for regenerating derivatives and ai is provider input; neither is served to clients.
+PUBLIC_MEDIA_KINDS = (MediaKind.display, MediaKind.thumb)
 
 
 class CamelModel(BaseModel):
@@ -40,7 +42,6 @@ class MealIn(CamelModel):
 
 class MediaOut(CamelModel):
     id: UUID
-    kind: MediaKind
     width: int
     height: int
 
@@ -51,9 +52,17 @@ class MealOut(CamelModel):
     meal_type: MealType
     notes: str | None
     version: int
-    media: list[MediaOut]
+    # One photo per meal; keys are its available public size variants.
+    media: dict[MediaKind, MediaOut]
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("media", mode="before")
+    @classmethod
+    def _public_variants(cls, value):
+        if isinstance(value, dict):
+            return value
+        return {obj.kind: obj for obj in value if obj.kind in PUBLIC_MEDIA_KINDS}
 
 
 @router.post(
