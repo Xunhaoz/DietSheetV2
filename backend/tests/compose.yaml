@@ -1,0 +1,17 @@
+# Disposable dependencies for integration tests; started and removed by scripts/ci.sh.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: dietsheet
+      POSTGRES_USER: dietsheet
+      POSTGRES_PASSWORD: dietsheet-test-only
+    # Random host port so parallel runs do not collide; data lives in memory only.
+    ports:
+      - "127.0.0.1::5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dietsheet -d dietsheet"]
+      interval: 2s
+      retries: 30

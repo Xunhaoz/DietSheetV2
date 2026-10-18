@@ -26,7 +26,7 @@ include = ["app*"]
 [dependency-groups]
 dev = [
     "boto3-stubs[s3]>=1.43.114",
-    "httpx>=0.28.1",
+    "httpx2>=2.13.1",
     "import-linter>=2.15",
     "mypy>=2.4.0",
     "pre-commit>=4.7.0",
@@ -45,7 +45,15 @@ select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
 # FastAPI declares dependencies as call defaults by design.
 extend-immutable-calls = ["fastapi.Depends", "fastapi.File", "fastapi.Form", "fastapi.Header"]
 
+[tool.ruff.lint.isort]
+# The local alembic/ migrations folder would otherwise make ruff treat the library as first-party.
+known-third-party = ["alembic"]
+
 [tool.mypy]
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["app", "alembic"]
+files = ["app", "alembic", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "-ra"]
