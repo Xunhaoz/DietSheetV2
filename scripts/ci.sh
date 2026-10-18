@@ -20,6 +20,9 @@ uv run ruff format --check .
 echo "==> type check"
 uv run mypy
 
+echo "==> architecture rules"
+uv run lint-imports
+
 echo "==> start disposable Postgres"
 "${compose[@]}" up --detach --wait db >/dev/null
 port="$("${compose[@]}" port db 5432 | cut -d: -f2)"

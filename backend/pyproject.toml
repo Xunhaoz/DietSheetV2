@@ -57,3 +57,45 @@ files = ["app", "alembic", "tests"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["--strict-markers", "-ra"]
+
+# Architecture rules from doc/developer/backend/conventions.md, checked by `lint-imports`.
+[tool.importlinter]
+root_package = "app"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Feature layers: router > schemas > service > repository > models"
+type = "layers"
+containers = ["app.meals"]
+layers = ["router", "schemas", "service", "repository", "models"]
+
+[[tool.importlinter.contracts]]
+name = "Services, repositories and domain code stay free of HTTP"
+type = "forbidden"
+source_modules = [
+    "app.meals.service",
+    "app.meals.repository",
+    "app.meals.models",
+    "app.media",
+    "app.core.config",
+    "app.core.db",
+    "app.core.errors",
+]
+forbidden_modules = ["fastapi", "starlette"]
+
+[[tool.importlinter.contracts]]
+name = "core does not depend on features"
+type = "forbidden"
+source_modules = ["app.core"]
+forbidden_modules = ["app.accounts", "app.meals", "app.media"]
+
+[[tool.importlinter.contracts]]
+name = "Shared features do not depend on meals"
+type = "forbidden"
+source_modules = ["app.accounts", "app.media"]
+forbidden_modules = ["app.meals"]
+
+[[tool.importlinter.contracts]]
+name = "Shared features are independent of each other"
+type = "independence"
+modules = ["app.accounts", "app.media"]
