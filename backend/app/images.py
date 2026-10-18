@@ -34,13 +34,13 @@ def inspect_image(data: bytes) -> ImageInfo:
     """Decode the photo and apply the upload rules from design.md."""
     try:
         image = Image.open(io.BytesIO(data))
-    except UnidentifiedImageError:
-        raise InvalidImage(415, "Only JPEG photos are supported")
-    except Image.DecompressionBombError:
-        raise InvalidImage(422, f"Photo long edge must be at most {MAX_LONG_EDGE} px")
-    except OSError:
+    except UnidentifiedImageError as exc:
+        raise InvalidImage(415, "Only JPEG photos are supported") from exc
+    except Image.DecompressionBombError as exc:
+        raise InvalidImage(422, f"Photo long edge must be at most {MAX_LONG_EDGE} px") from exc
+    except OSError as exc:
         # Recognised format, but the header or first bytes are damaged (e.g. truncated upload).
-        raise InvalidImage(422, "Image data is corrupt")
+        raise InvalidImage(422, "Image data is corrupt") from exc
 
     with image:
         # Multi-picture JPEGs (MPO) report a different format and are rejected here too.
@@ -53,8 +53,8 @@ def inspect_image(data: bytes) -> ImageInfo:
         try:
             image.load()
             orientation = image.getexif().get(0x0112)
-        except (OSError, SyntaxError):
-            raise InvalidImage(422, "Image data is corrupt")
+        except (OSError, SyntaxError) as exc:
+            raise InvalidImage(422, "Image data is corrupt") from exc
         if orientation in _SWAPPING_ORIENTATIONS:
             width, height = height, width
 

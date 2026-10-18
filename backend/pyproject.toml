@@ -22,3 +22,30 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 # Include subpackages such as app.meals once features are split into packages.
 include = ["app*"]
+
+[dependency-groups]
+dev = [
+    "boto3-stubs[s3]>=1.43.114",
+    "httpx>=0.28.1",
+    "import-linter>=2.15",
+    "mypy>=2.4.0",
+    "pre-commit>=4.7.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI declares dependencies as call defaults by design.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.File", "fastapi.Form", "fastapi.Header"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["app", "alembic"]

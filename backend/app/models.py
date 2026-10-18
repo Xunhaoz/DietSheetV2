@@ -31,7 +31,7 @@ class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
-class MealType(str, enum.Enum):
+class MealType(enum.StrEnum):
     breakfast = "breakfast"
     lunch = "lunch"
     dinner = "dinner"
@@ -40,7 +40,7 @@ class MealType(str, enum.Enum):
     drink = "drink"
 
 
-class MediaKind(str, enum.Enum):
+class MediaKind(enum.StrEnum):
     source = "source"
     display = "display"
     ai = "ai"
@@ -70,7 +70,7 @@ class Meal(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    media:Mapped[list["MediaObject"]] = relationship(back_populates="meal", lazy="selectin")
+    media: Mapped[list["MediaObject"]] = relationship(back_populates="meal", lazy="selectin")
 
 
 class MediaObject(Base):

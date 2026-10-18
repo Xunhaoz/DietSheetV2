@@ -1,10 +1,14 @@
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
 from app.config import settings
+
+if TYPE_CHECKING:  # stubs come from the boto3-stubs dev dependency
+    from mypy_boto3_s3 import S3Client
 
 
 class StorageUnavailable(Exception):
@@ -14,7 +18,7 @@ class StorageUnavailable(Exception):
 class ObjectStorage:
     """Thin S3 adapter; SeaweedFS is reached by pointing endpoint_url at its S3 port."""
 
-    def __init__(self, client, bucket: str):
+    def __init__(self, client: "S3Client", bucket: str):
         self.client = client
         self.bucket = bucket
 

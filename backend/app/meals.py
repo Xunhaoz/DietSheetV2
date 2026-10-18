@@ -1,6 +1,6 @@
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -59,9 +59,10 @@ class MealOut(CamelModel):
 
     @field_validator("media", mode="before")
     @classmethod
-    def _public_variants(cls, value):
+    def _public_variants(cls, value: object) -> object:
         if isinstance(value, dict):
             return value
+        assert isinstance(value, list)  # Meal.media from the ORM
         return {obj.kind: obj for obj in value if obj.kind in PUBLIC_MEDIA_KINDS}
 
 
@@ -89,7 +90,7 @@ def create_meal(
     try:
         info = inspect_image(data)
     except InvalidImage as exc:
-        raise HTTPException(exc.status_code, exc.message)
+        raise HTTPException(exc.status_code, exc.message) from exc
 
     photo_sha256 = hashlib.sha256(data).hexdigest()
     request_hash = _request_hash(captured_at, meal_type, notes, photo_sha256)
@@ -142,7 +143,7 @@ def create_meal(
 
 def _request_hash(captured_at: datetime, meal_type: MealType, notes: str | None, photo_sha256: str) -> str:
     normalized = {
-        "capturedAt": captured_at.astimezone(timezone.utc).isoformat(),
+        "capturedAt": captured_at.astimezone(UTC).isoformat(),
         "mealType": meal_type.value,
         "notes": notes,
         "photoSha256": photo_sha256,

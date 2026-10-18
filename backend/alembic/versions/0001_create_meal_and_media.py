@@ -4,8 +4,10 @@ Revision ID: 0001
 Revises:
 Create Date: 2026-10-14
 """
-from alembic import op
+
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "0001"
 down_revision = None
@@ -51,7 +53,10 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["meal_id"], ["meal.id"], name=op.f("fk_media_object_meal_id_meal")),
         sa.UniqueConstraint("object_key", name=op.f("uq_media_object_object_key")),
         sa.UniqueConstraint(
-            "meal_id", "kind", "processor_version", name=op.f("uq_media_object_meal_id_kind_processor_version")
+            "meal_id",
+            "kind",
+            "processor_version",
+            name=op.f("uq_media_object_meal_id_kind_processor_version"),
         ),
         sa.CheckConstraint(
             "byte_size > 0 AND width > 0 AND height > 0", name=op.f("ck_media_object_positive_size")
