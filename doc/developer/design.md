@@ -109,7 +109,7 @@ endlegend
 
 FastAPI provides validation and OpenAPI integration; Alembic manages schema revisions. Celery handles durable background work. SeaweedFS mini provides a compact S3 deployment, with explicit credentials. Pin tested releases and container digests at implementation. [FastAPI](https://fastapi.tiangolo.com/), [Alembic](https://alembic.sqlalchemy.org/en/latest/tutorial.html), [Celery/RabbitMQ](https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/rabbitmq.html), [SeaweedFS mini](https://github.com/seaweedfs/seaweedfs/wiki/Quick-Start-with-weed-mini), [S3 credentials](https://github.com/seaweedfs/seaweedfs/wiki/S3-Credentials).
 
-Use one modular backend: `accounts`, `meals`, `media`, `nutrition`, `measurements`, `jobs`. HTTP handlers validate inputs and call application services; workers call the same services. Keep image transformation, nutrient calculation and provider calls independent.
+Use one modular backend: `accounts`, `meals`, `media`, `nutrition`, `measurements`, `jobs`. HTTP handlers validate inputs and call application services; workers call the same services. Package layout and layering rules: [backend conventions](backend/conventions.md). Keep image transformation, nutrient calculation and provider calls independent.
 
 Run stateless API replicas and separate image/AI workers only when load requires it. Compute daily totals using indexed, bounded queries. One physical host remains a single point of failure.
 

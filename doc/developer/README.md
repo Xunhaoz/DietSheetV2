@@ -8,6 +8,7 @@ Status: proposed design. Baseline: [`5edb1bd`](https://github.com/Xunhaoz/DeitSh
 | [Data](data.md) | Complete proposed relational model, object storage, migration |
 | [API](api.md) | Frontend/backend contract |
 | [Delivery](delivery.md) | Compose, updates, GitHub Actions, recovery, testing |
+| [Backend guide](backend/README.md) | Setup, conventions and testing for the implemented backend; current deviations from this design |
 | [User guide](../user/README.md) | Intended user workflows |
 
 Deployment target: **114.32.210.249**, with external access. Assume one owner initially; every domain record is owner-scoped. Hardware capacity is sufficient according to the owner. CPU architecture, public hostname, SSH identity/port and backup destination remain deployment parameters.
