@@ -21,7 +21,7 @@ Only `uv.lock` decides installed versions. After changing dependencies in `pypro
 ./scripts/ci.sh              # from the repository root; extra arguments go to pytest
 ```
 
-It runs ruff, mypy (strict), the architecture rules and all tests against a throwaway Postgres, then removes it. `uv run pytest` alone runs unit tests and skips integration tests. See [Testing](testing.md).
+It runs ruff, mypy (strict), the architecture rules and all tests against a throwaway Postgres, then smoke-tests the built Docker image, and removes everything it created. `uv run pytest` alone runs unit tests and skips integration tests. See [Testing](testing.md).
 
 ## Run the stack
 

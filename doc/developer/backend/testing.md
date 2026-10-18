@@ -26,5 +26,6 @@ Prefer a unit test when the behaviour does not depend on Postgres. Cover a datab
 3. `mypy` in strict mode, over `app`, `alembic` and `tests`
 4. `lint-imports`: the layering rules in [Conventions](conventions.md#layout-one-package-per-feature)
 5. `pytest` against a throwaway Postgres on a random port
+6. Image smoke test: build the Docker image, then import the app and load the migrations inside it. Tests run the editable source checkout, so only this step catches packaging mistakes such as a package left out of the image
 
 Run it before pushing. The pre-commit hooks cover steps 2–4 only.
