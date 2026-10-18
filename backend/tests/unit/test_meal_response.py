@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 
 from app.meals.models import MealType
-from app.meals.router import MealOut
+from app.meals.schemas import MealOut
 from app.media.models import MediaKind
 
 

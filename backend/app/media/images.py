@@ -3,6 +3,8 @@ from dataclasses import dataclass
 
 from PIL import Image, UnidentifiedImageError
 
+from app.core.errors import DomainError
+
 # Clients resize the long edge to 1024 px before upload. A 1024x768 JPEG is at most
 # about 1.3 MiB even at quality 100 on pure noise, so 2 MiB leaves room for metadata.
 MAX_BYTES = 2 * 1024 * 1024
@@ -15,11 +17,11 @@ EXTENSION = "jpg"
 _SWAPPING_ORIENTATIONS = {5, 6, 7, 8}
 
 
-class InvalidImage(Exception):
-    def __init__(self, status_code: int, message: str):
-        super().__init__(message)
-        self.status_code = status_code
-        self.message = message
+class InvalidImage(DomainError):
+    """The photo breaks an upload rule; status_code is 415 for format, 422 for content."""
+
+    def __init__(self, status_code: int, message: str) -> None:
+        super().__init__(message, status_code)
 
 
 @dataclass(frozen=True)

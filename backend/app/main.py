@@ -1,18 +1,16 @@
-import logging
+"""Application assembly: lifespan, middleware, routers and error handlers. No business logic."""
+
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from sqlalchemy.exc import OperationalError
+from fastapi import FastAPI
 
 from app.core.body_limit import BodySizeLimitMiddleware
 from app.core.db import engine
+from app.core.error_handlers import register_error_handlers
 from app.meals.router import MAX_REQUEST_BYTES
 from app.meals.router import router as meals_router
-from app.media.storage import StorageUnavailable, get_storage
-
-logger = logging.getLogger(__name__)
+from app.media.storage import get_storage
 
 
 @asynccontextmanager
@@ -30,14 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="DietSheet", lifespan=lifespan)
 app.add_middleware(BodySizeLimitMiddleware, max_bytes=MAX_REQUEST_BYTES)
 app.include_router(meals_router)
-
-
-@app.exception_handler(StorageUnavailable)
-@app.exception_handler(OperationalError)
-async def persistence_unavailable(request: Request, exc: Exception) -> JSONResponse:
-    # api.md: 503 for unavailable persistence, so clients know a retry with the same key is safe.
-    logger.warning("Persistence unavailable for %s %s", request.method, request.url.path, exc_info=exc)
-    return JSONResponse({"detail": "Storage is temporarily unavailable"}, 503)
+register_error_handlers(app)
 
 
 @app.get("/health/live")

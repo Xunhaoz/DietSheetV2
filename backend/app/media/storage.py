@@ -6,13 +6,19 @@ from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
 from app.core.config import settings
+from app.core.errors import DomainError
 
 if TYPE_CHECKING:  # stubs come from the boto3-stubs dev dependency
     from mypy_boto3_s3 import S3Client
 
 
-class StorageUnavailable(Exception):
+class StorageUnavailable(DomainError):
     """Object storage could not be reached or failed on its side; the request can be retried."""
+
+    status_code = 503
+
+    def __init__(self, message: str = "Storage is temporarily unavailable") -> None:
+        super().__init__(message)
 
 
 class ObjectStorage:

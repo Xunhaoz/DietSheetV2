@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta, timezone
 
 from app.meals.models import MealType
-from app.meals.router import _request_hash
+from app.meals.service import request_hash
 
 TAIPEI = timezone(timedelta(hours=8))
 
@@ -12,7 +12,7 @@ def test_same_instant_in_different_offsets_hashes_equally() -> None:
     utc = datetime(2026, 10, 18, 4, 30, tzinfo=UTC)
 
     # Act
-    hashes = {_request_hash(moment, MealType.lunch, "rice", "a" * 64) for moment in (local, utc)}
+    hashes = {request_hash(moment, MealType.lunch, "rice", "a" * 64) for moment in (local, utc)}
 
     # Assert
     assert len(hashes) == 1
@@ -30,7 +30,7 @@ def test_any_changed_field_changes_the_hash() -> None:
     ]
 
     # Act
-    changed = [_request_hash(*variant) != _request_hash(*base) for variant in variants]
+    changed = [request_hash(*variant) != request_hash(*base) for variant in variants]
 
     # Assert
     assert all(changed)
