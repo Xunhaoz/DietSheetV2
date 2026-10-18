@@ -2,8 +2,9 @@ import uuid
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
-from app.meals import MealOut
-from app.models import MealType, MediaKind
+from app.meals.models import MealType
+from app.meals.router import MealOut
+from app.media.models import MediaKind
 
 
 def _meal_with(*kinds: MediaKind) -> SimpleNamespace:

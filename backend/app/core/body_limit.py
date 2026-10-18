@@ -1,11 +1,6 @@
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from app.images import MAX_BYTES
-
-# Room for the other form fields (notes is at most 2000 characters) and multipart framing.
-MAX_REQUEST_BYTES = MAX_BYTES + 64 * 1024
-
 
 class BodySizeLimitMiddleware:
     """Reject oversized or unsized request bodies before FastAPI reads them.
@@ -15,7 +10,7 @@ class BodySizeLimitMiddleware:
     the body by Content-Length and never delivers more, so checking the header suffices.
     """
 
-    def __init__(self, app: ASGIApp, max_bytes: int = MAX_REQUEST_BYTES):
+    def __init__(self, app: ASGIApp, max_bytes: int):
         self.app = app
         self.max_bytes = max_bytes
 

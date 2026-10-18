@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.config import Settings
+from app.core.config import Settings
 
 
 def test_rejects_api_token_shorter_than_32_characters(monkeypatch: pytest.MonkeyPatch) -> None:

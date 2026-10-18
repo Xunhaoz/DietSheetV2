@@ -5,7 +5,7 @@ import pytest
 from botocore.exceptions import ClientError, EndpointConnectionError
 from botocore.stub import Stubber
 
-from app.storage import ObjectStorage, StorageUnavailable
+from app.media.storage import ObjectStorage, StorageUnavailable
 
 
 @pytest.fixture

@@ -4,8 +4,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
-from app.images import MAX_BYTES
-from app.models import Meal, MediaKind, MediaObject
+from app.meals.models import Meal
+from app.media.images import MAX_BYTES
+from app.media.models import MediaKind, MediaObject
 from tests.support import FakeStorage, make_jpeg, new_key, upload
 
 USER_KEY = "meal-20260925002732419-557692"  # the format the iPhone Shortcut generates

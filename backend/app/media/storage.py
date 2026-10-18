@@ -5,7 +5,7 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
-from app.config import settings
+from app.core.config import settings
 
 if TYPE_CHECKING:  # stubs come from the boto3-stubs dev dependency
     from mypy_boto3_s3 import S3Client

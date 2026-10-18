@@ -6,10 +6,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import OperationalError
 
-from app import meals
-from app.body_limit import BodySizeLimitMiddleware
-from app.db import engine
-from app.storage import StorageUnavailable, get_storage
+from app.core.body_limit import BodySizeLimitMiddleware
+from app.core.db import engine
+from app.meals.router import MAX_REQUEST_BYTES
+from app.meals.router import router as meals_router
+from app.media.storage import StorageUnavailable, get_storage
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="DietSheet", lifespan=lifespan)
-app.add_middleware(BodySizeLimitMiddleware)
-app.include_router(meals.router)
+app.add_middleware(BodySizeLimitMiddleware, max_bytes=MAX_REQUEST_BYTES)
+app.include_router(meals_router)
 
 
 @app.exception_handler(StorageUnavailable)

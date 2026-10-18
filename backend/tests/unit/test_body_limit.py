@@ -6,7 +6,7 @@ from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 from starlette.routing import Route
 
-from app.body_limit import BodySizeLimitMiddleware
+from app.core.body_limit import BodySizeLimitMiddleware
 
 
 async def _echo_length(request: Request) -> PlainTextResponse:

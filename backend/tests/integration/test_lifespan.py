@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine, NullPool, create_engine, text
 
 from app.main import app
-from app.storage import get_storage
+from app.media.storage import get_storage
 from tests.support import FakeStorage, upload
 
 

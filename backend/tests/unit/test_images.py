@@ -4,7 +4,7 @@ import struct
 import pytest
 from PIL import Image
 
-from app.images import MAX_LONG_EDGE, InvalidImage, inspect_image
+from app.media.images import MAX_LONG_EDGE, InvalidImage, inspect_image
 from tests.support import encode, make_jpeg
 
 

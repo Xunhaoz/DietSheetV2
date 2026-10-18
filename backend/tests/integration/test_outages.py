@@ -4,9 +4,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.db import get_session
+from app.core.db import get_session
 from app.main import app
-from app.storage import StorageUnavailable, get_storage
+from app.media.storage import StorageUnavailable, get_storage
 from tests.support import FakeStorage, new_key, upload
 
 

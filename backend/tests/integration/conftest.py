@@ -8,9 +8,9 @@ from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, text
 
-from app.db import engine
+from app.core.db import engine
 from app.main import app
-from app.storage import get_storage
+from app.media.storage import get_storage
 from tests.support import FakeStorage
 
 BACKEND = Path(__file__).resolve().parents[2]

@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta, timezone
 
-from app.meals import _request_hash
-from app.models import MealType
+from app.meals.models import MealType
+from app.meals.router import _request_hash
 
 TAIPEI = timezone(timedelta(hours=8))
 

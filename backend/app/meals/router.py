@@ -11,13 +11,18 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.auth import current_owner
-from app.db import get_session
-from app.images import MAX_BYTES, InvalidImage, inspect_image
-from app.models import Meal, MealType, MediaKind, MediaObject
-from app.storage import ObjectStorage, get_storage
+from app.accounts.auth import current_owner
+from app.core.db import get_session
+from app.meals.models import Meal, MealType
+from app.media.images import MAX_BYTES, InvalidImage, inspect_image
+from app.media.models import MediaKind, MediaObject
+from app.media.storage import ObjectStorage, get_storage
 
 router = APIRouter(prefix="/api/v1")
+
+# Request body budget: the photo plus the other form fields (notes is at most 2000 characters)
+# and multipart framing. Enforced by BodySizeLimitMiddleware before the body is read.
+MAX_REQUEST_BYTES = MAX_BYTES + 64 * 1024
 
 SOURCE_PROCESSOR_VERSION = 1
 # source is only for regenerating derivatives and ai is provider input; neither is served to clients.
