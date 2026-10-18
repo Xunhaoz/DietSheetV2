@@ -17,3 +17,4 @@ The DietSheet API: a FastAPI service that stores meal photos in S3-compatible st
 - **uv with a committed lockfile.** Builds and CI install identical versions (`uv sync --frozen`). Changing a dependency means re-locking and committing `uv.lock`.
 - **One image, two commands.** The API and the `migrate` job run the same image, so the schema and the code that expects it always ship together.
 - **Dependencies are installed before the source is copied** in the Dockerfile, so code-only changes rebuild in seconds.
+- **Two-stage image.** The final image holds only the installed virtualenv, not the `app/` source or uv. The API and migrations therefore run exactly the packaged code: a file missing from the package fails at startup instead of being silently picked up from a source folder.
