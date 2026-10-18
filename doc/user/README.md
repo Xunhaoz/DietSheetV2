@@ -12,6 +12,20 @@ Guide to the proposed self-hosted version.
 
 Missing values are shown as unknown. Partial totals identify unfinished estimates. A value of 125% means the recorded amount is 25% above the target; the graph shows that excess. Percentages compare recorded intake with the selected target.
 
+## iPhone Shortcut
+
+The Shortcut uploads a meal with **Get Contents of URL**:
+
+- **URL:** `https://<your host>/api/v1/meals`, method `POST`.
+- **Headers:** `Authorization` = `Bearer <token from the operator>`, and `Idempotency-Key` = a new ID per meal (for example `meal-20260925002732419-557692`; 16–80 letters, digits, `-` or `_`).
+- **Request Body:** `Form`, with exactly these fields:
+  - `photo`: the photo itself as a file (not Base64), already resized as described above.
+  - `capturedAt`: the capture time formatted as ISO 8601 including the time; the timezone offset is required.
+  - `mealType`: one of `breakfast`, `lunch`, `dinner`, `snack`, `late_snack`, `drink`.
+  - `notes`: optional.
+
+Any other field is rejected. If an upload times out, run it again with the same `Idempotency-Key`: the meal is saved once, and a repeat returns the saved meal.
+
 ## Body measurements and goals
 
 - **Body data:** enter a new dated measurement; correct or delete entries in history. The latest measurement appears in the sidebar.

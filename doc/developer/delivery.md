@@ -51,7 +51,7 @@ The [workflow example](examples/release.yml.example) is intentionally outside `.
 
 Required configuration: `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PLATFORM`, internal `REGISTRY_HOST`, public `APP_HOSTNAME`; protected SSH key/known-hosts and registry credentials. The runner must reach the local registry. If the LAN cannot hairpin to the public IP, configure an explicit internal SSH route to the same host and retain the public target mapping. [GitHub runner security](https://docs.github.com/en/actions/reference/security/secure-use).
 
-Planned script contracts: `ci.sh` creates disposable Compose dependencies, runs all tests and removes only its own test volumes; `publish.sh` builds/pushes both images and verifies returned digests; `request-deploy.sh` validates the commit argument and submits it to the host command. Release manifests live in the local registry or host release store; tests and logs contain synthetic data only.
+Script contracts: [`ci.sh`](../../scripts/ci.sh) (implemented) creates disposable Compose dependencies, runs lint, type and architecture checks and all tests, and removes only its own test volumes; planned `publish.sh` builds/pushes both images and verifies returned digests; `request-deploy.sh` validates the commit argument and submits it to the host command. Release manifests live in the local registry or host release store; tests and logs contain synthetic data only.
 
 ## Recovery and operating targets
 
