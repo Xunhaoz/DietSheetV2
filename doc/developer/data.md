@@ -36,7 +36,7 @@ entity meal {
 entity media_object {
   * id : uuid <<PK>>
   * meal_id : uuid <<FK>>
-  * kind : source | display | ai | thumb
+  * kind : source | display | thumb
   * processor_version : int
   * object_key : text <<UNIQUE>>
   {field} * sha256 : char(64)

@@ -140,7 +140,7 @@ def test_response_lists_public_variants_once_they_exist(client: TestClient, migr
     key = new_key()
     meal_id = uuid.UUID(upload(client, key=key).json()["id"])
     with Session(migrated_engine) as session:
-        for kind in (MediaKind.display, MediaKind.ai, MediaKind.thumb):
+        for kind in (MediaKind.display, MediaKind.thumb):
             session.add(
                 MediaObject(
                     meal_id=meal_id,

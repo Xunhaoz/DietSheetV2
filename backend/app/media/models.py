@@ -20,8 +20,8 @@ from app.core.db import Base
 
 class MediaKind(enum.StrEnum):
     source = "source"
+    # Detail view and AI provider input: one derivative serves both.
     display = "display"
-    ai = "ai"
     thumb = "thumb"
 
 

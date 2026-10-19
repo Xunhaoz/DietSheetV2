@@ -24,7 +24,7 @@ def _meal_with(*kinds: MediaKind) -> SimpleNamespace:
 
 def test_media_exposes_only_public_variants_keyed_by_kind() -> None:
     # Arrange
-    meal = _meal_with(MediaKind.source, MediaKind.display, MediaKind.ai, MediaKind.thumb)
+    meal = _meal_with(MediaKind.source, MediaKind.display, MediaKind.thumb)
 
     # Act
     body = MealOut.model_validate(meal).model_dump(by_alias=True, mode="json")

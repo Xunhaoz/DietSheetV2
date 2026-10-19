@@ -8,7 +8,7 @@ from app.core.schemas import CamelModel
 from app.meals.models import MealType
 from app.media.models import MediaKind
 
-# source is only for regenerating derivatives and ai is provider input; neither is served to clients.
+# source keeps the original bytes, including EXIF such as GPS, so it is never served to clients.
 PUBLIC_MEDIA_KINDS = (MediaKind.display, MediaKind.thumb)
 
 

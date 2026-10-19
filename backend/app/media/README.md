@@ -25,10 +25,11 @@ The size limit in bytes (`MAX_BYTES`, 2 MiB) lives here too. The largest 1024×7
 
 ## Records
 
-Each stored file is one `MediaObject`: object key, SHA-256, content type, size and displayed dimensions. Kinds are `source` (the upload, private), `display`, `ai` (private provider input) and `thumb`, unique per meal, kind and `processor_version`, so derivatives can be regenerated under a new version without overwriting. `meal_id` refers to the meal table by name only, keeping this package independent of `meals`.
+Each stored file is one `MediaObject`: object key, SHA-256, content type, size and displayed dimensions. Kinds are `source` (the upload, private), `display` (detail view and AI provider input) and `thumb`, unique per meal, kind and `processor_version`, so derivatives can be regenerated under a new version without overwriting. `meal_id` refers to the meal table by name only, keeping this package independent of `meals`.
 
 ## Trade-offs
 
+- **One `display` derivative for people and the AI provider.** With sources capped at 1024 px, a separate AI copy would have the same dimensions and differ only in quality. Merging saves a file and an encoding pass per photo; the cost is that `display` quality drops below 90 whenever needed to fit the provider's 600 KiB budget, so the detail view may be slightly softer for very detailed photos.
 - **Reject, do not resize.** Keeps the server simple and the stored source exactly what the client chose, but every client must resize correctly. The detail view is limited to 1024 px.
 - **SeaweedFS behind an S3 adapter.** Any S3-compatible store works by changing the endpoint. Backups must include SeaweedFS metadata, not only data files.
 - **Full decode on upload.** This catches corrupt files early, at about 2.4 MB of memory per 1024×768 photo.

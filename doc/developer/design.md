@@ -84,7 +84,7 @@ beat --> broker : scheduled dispatch
 broker --> worker : durable jobs
 worker --> db : claims / results
 worker --> objects : image variants
-worker --> gemini : AI image + notes
+worker --> gemini : display image + notes
 github --> delivery : tests / release
 delivery ..> edge : verified host deployment
 db --> backup
@@ -120,8 +120,7 @@ Accept JPEG only, up to 2 MiB, with the long edge at most 1024 px (for example 1
 | Variant | Proposed encoding | Use |
 | --- | --- | --- |
 | `source` | Uploaded bytes; private, immutable | Private source for regenerating derivatives |
-| `display` | JPEG quality 90, source dimensions (longest edge <= 1024 px) | Individual meal view |
-| `ai` | JPEG quality 75, source dimensions (longest edge <= 1024 px), <= 600 KiB | Provider input; lower quality/size until under budget |
+| `display` | JPEG quality 90, source dimensions (longest edge <= 1024 px), <= 600 KiB; lower quality only until under budget | Individual meal view and AI provider input |
 | `thumb` | WebP quality 75, longest edge <= 480 px | Gallery and dashboard |
 
 Limit output dimensions to the source dimensions. Because sources are at most 1024 px, the individual meal view shows at most 1024 px. Strip metadata from all derivatives, convert to sRGB and retain ratio. Store dimensions to reserve layout space; use `aspect-ratio` and `object-fit: contain`. Quality limits require verification on real food photos. Imported image quality is limited by the source. [Pillow orientation operations](https://pillow.readthedocs.io/en/stable/reference/ImageOps.html).
@@ -157,7 +156,7 @@ loop Dispatch and reconcile
 end
 Q -> W : Image job ID (may redeliver)
 W -> DB : Claim lease; increment bounded attempt
-W -> S3 : Read source; write display/AI/WebP variants
+W -> S3 : Read source; write display/WebP variants
 W -> DB : Transaction: metadata + image success
 note right of DB
   Same transaction creates analysis job + outbox.
@@ -166,7 +165,7 @@ end note
 D -> Q : Publish analysis job ID
 Q -> W : Analysis job
 W -> DB : Claim lease; read input revision
-W -> S3 : Read low-resolution AI image
+W -> S3 : Read display image
 W -> AI : Image + meal type/notes
 AI --> W : Structured estimate or error
 alt Valid response and revision/lease still current
@@ -191,7 +190,7 @@ end note
 
 1. API authenticates and validates upload; stores source under a unique staging key. In one DB transaction, create meal, source metadata, image job and outbox event. Respond `202` after persistence; AI analysis runs asynchronously.
 2. Celery Beat schedules outbox dispatch/reconciliation every 10 seconds. Dispatcher publishes persistent messages with publisher confirms, then marks the event published. A crash between these steps may duplicate delivery.
-3. Workers atomically claim a job with a lease and increment its DB attempt counter. Write derivatives before publishing metadata. One transaction finishes the image job and creates the analysis job/outbox event (except imports, whose job snapshot sets `analyzeAfter=false`). The AI job receives only the low-resolution derivative and user meal data. The analysis endpoint also retries failed image processing from its saved source.
+3. Workers atomically claim a job with a lease and increment its DB attempt counter. Write derivatives before publishing metadata. One transaction finishes the image job and creates the analysis job/outbox event (except imports, whose job snapshot sets `analyzeAfter=false`). The AI job receives only the metadata-free `display` derivative and user meal data; with sources capped at 1024 px, a separate provider copy would differ only in quality. The analysis endpoint also retries failed image processing from its saved source.
 4. Persist a validated result and select it as current only if the meal's analysis revision still matches. A newer edit, reanalysis or deletion fences out an old worker. Polling clients refresh the meal and day totals.
 
 Job states: `queued -> running -> succeeded | unrecognized | retry_wait | failed`; `retry_wait -> running`; obsolete jobs become `cancelled`. `unrecognized` applies to analysis jobs. Use late acknowledgement, prefetch 1, 120-second hard task limit, 180-second lease and bounded provider timeouts. Retry transient timeouts/429/5xx with jitter (about 30/120 seconds; respect bounded Retry-After), at most three total attempts. Invalid images and credential failures stop immediately. Persist attempts across redelivery; terminal tasks are no-ops. [Celery task semantics](https://docs.celeryq.dev/en/stable/userguide/tasks.html).

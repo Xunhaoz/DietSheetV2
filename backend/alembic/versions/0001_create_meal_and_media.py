@@ -14,7 +14,7 @@ branch_labels = None
 depends_on = None
 
 meal_type = sa.Enum("breakfast", "lunch", "dinner", "snack", "late_snack", "drink", name="meal_type")
-media_kind = sa.Enum("source", "display", "ai", "thumb", name="media_kind")
+media_kind = sa.Enum("source", "display", "thumb", name="media_kind")
 
 
 def upgrade() -> None:

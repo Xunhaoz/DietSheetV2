@@ -18,7 +18,7 @@ Recording meals. Today this covers one use case: uploading a meal with its photo
 4. **Store the photo, then the record.** The photo goes to object storage first; then one transaction writes the meal and its `source` media row (201).
 5. **Concurrent duplicates.** If two identical requests race, the unique `(user_id, idempotency_key)` constraint lets one commit; the other falls back to the replay check.
 
-The response's `media` maps public size variants (`display`, `thumb`) to their dimensions. `source` and `ai` are internal and never returned, so a fresh upload shows `{}`.
+The response's `media` maps public size variants (`display`, `thumb`) to their dimensions. `source` keeps the original bytes, including EXIF such as GPS, so it is never returned, and a fresh upload shows `{}`.
 
 ## Trade-offs
 

@@ -35,7 +35,7 @@ The app supports a standard desktop layout, a compact Mac layout with the Dock v
 
 ## Data and troubleshooting
 
-Application data and images are stored on the owner's host. Gemini receives the low-resolution meal photo and its meal type/notes for analysis.
+Application data and images are stored on the owner's host. Gemini receives the same photo the app shows (at most 1024 px, metadata removed) and its meal type/notes for analysis.
 
 If analysis is delayed, the meal is still saved. If a refresh fails, keep the saved data visible and retry when the service returns. For an interrupted upload, retry the same submission. If a gallery page fails, retry loading that page. Ask the operator to reset a forgotten password or restore a backup.
 
