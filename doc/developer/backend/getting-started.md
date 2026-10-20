@@ -52,7 +52,7 @@ curl -H "Authorization: Bearer $API_TOKEN" -H "Idempotency-Key: meal-$(date +%Y%
   http://localhost:8000/api/v1/meals
 ```
 
-The photo must be a JPEG with a long edge of at most 1024 px. Interactive API docs are at `http://localhost:8000/docs`.
+The photo must be a JPEG with a long edge of at most 1024 px. Interactive API docs are at `http://localhost:8000/docs`. To run the stack on a host and reach it from a phone, see [Deployment](deployment.md).
 
 ## Common tasks
 

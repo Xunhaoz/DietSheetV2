@@ -10,4 +10,4 @@ A self-hosted meal log: photos sent from an iPhone Shortcut are stored with thei
 | `compose.yaml` | Local and host stack: PostgreSQL, SeaweedFS, migrations and the API |
 | `.env.example` | Settings the stack needs; copy to `.env` |
 
-New here? Set up your machine with [Getting started](doc/developer/backend/getting-started.md), then read [Contributing](doc/developer/backend/contributing.md).
+New here? Set up your machine with [Getting started](doc/developer/backend/getting-started.md), then read [Contributing](doc/developer/backend/contributing.md). To run it on your own host, follow [Deployment](doc/developer/backend/deployment.md).
