@@ -1,17 +1,31 @@
 # Getting started
 
-## Prerequisites
+## Install the tools
 
-- [uv](https://docs.astral.sh/uv/) 0.13 or newer (it installs Python 3.12 for the project if needed)
-- Docker with Compose v2, running
+You need git, [uv](https://docs.astral.sh/uv/) 0.13+ (it also installs Python 3.12) and Docker with Compose v2.
 
-## Set up
+| OS | Commands |
+| --- | --- |
+| macOS | `brew install git uv` and `brew install --cask docker`, then open Docker Desktop once |
+| Linux | Install git from your package manager, uv with `curl -LsSf https://astral.sh/uv/install.sh \| sh`, and [Docker Engine](https://docs.docker.com/engine/install/); add yourself to the `docker` group |
+| Windows | Use WSL 2 and follow the Linux steps; `scripts/ci.sh` is a bash script |
+
+Check that everything is ready (Docker must be running):
 
 ```bash
-cd backend
-uv sync                      # creates backend/.venv from uv.lock, including dev tools
-uv run pre-commit install    # optional: run ruff, mypy and lint-imports on every commit
+git --version && uv --version && docker compose version && docker info >/dev/null && echo ready
 ```
+
+## Set up the project
+
+```bash
+git clone <repository-url> DietSheet && cd DietSheet/backend
+uv sync                      # creates backend/.venv from uv.lock, including dev tools
+uv run pre-commit install    # checks ruff, mypy and architecture rules before each commit
+cd .. && ./scripts/ci.sh     # a green run means the machine is ready
+```
+
+The pre-commit hook runs on commits that touch `backend/**.py`; skip it once with `git commit --no-verify` only when you will run `ci.sh` before pushing.
 
 Only `uv.lock` decides installed versions. After changing dependencies in `pyproject.toml`, run `uv lock` and commit both files.
 

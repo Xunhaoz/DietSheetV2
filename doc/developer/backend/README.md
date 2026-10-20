@@ -4,7 +4,8 @@ How to set up, change and verify the FastAPI backend in [`backend/`](../../../ba
 
 | Page | Read it when |
 | --- | --- |
-| [Getting started](getting-started.md) | Setting up a machine, running the stack or the checks |
+| [Getting started](getting-started.md) | Setting up a new machine, running the stack or the checks |
+| [Contributing](contributing.md) | Learning the project and making your first change |
 | [Conventions](conventions.md) | Adding or changing code: layout, layers, errors, migrations, docs |
 | [Testing](testing.md) | Writing tests or reading a CI failure |
 
