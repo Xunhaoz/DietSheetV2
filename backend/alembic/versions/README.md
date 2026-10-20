@@ -13,5 +13,5 @@ Migration revisions. Each file has `upgrade()` and `downgrade()` and names its p
 
 ## Trade-offs
 
-- **`0001` has been edited in place** while no environment holds data worth keeping (renames, constraint names). Once a real deployment has run a revision, it is frozen and changes go into a new revision.
+- **`0001` has been edited in place** while no environment holds data worth keeping (renames, constraint names, removing the `ai` media kind). Once a real deployment has run a revision, it is frozen and changes go into a new revision.
 - **Postgres native enums.** The database rejects invalid values itself, but adding a meal type or media kind needs a migration with `ALTER TYPE ... ADD VALUE`.

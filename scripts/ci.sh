@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run every backend check against disposable dependencies. Extra arguments go to pytest.
-# Removes only the containers and volumes it created, even when a check fails.
+# Removes only the containers, volumes and image it created, even when a check fails.
 set -euo pipefail
 
 cd "$(dirname "$0")/../backend"

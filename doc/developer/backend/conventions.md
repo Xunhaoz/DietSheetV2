@@ -14,7 +14,7 @@ A feature package uses these modules, as needed:
 | `repository.py` | Queries and inserts | Commit, or make business decisions |
 | `models.py` | SQLAlchemy tables and enums | Import other layers |
 
-Dependencies point one way: `router → schemas → service → repository → models`. Between packages, `meals` may use `media` and `accounts`; those two do not use `meals` or each other, and `core` uses no feature. These rules are contracts in `backend/pyproject.toml` and fail CI when broken (`uv run lint-imports`). Register each new feature's models in `app/models.py`.
+Dependencies point one way: `router → schemas → service → repository → models`. Between packages, `meals` may use `media` and `accounts`; those two do not use `meals` or each other, and `core` uses no feature. These rules are contracts in `backend/pyproject.toml` and fail CI when broken (`uv run lint-imports`). The contracts name packages explicitly: add a new feature to them, or its layers go unchecked. Register each new feature's models in `app/models.py`.
 
 ## Errors
 
