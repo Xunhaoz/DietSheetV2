@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import create_engine
+from sqlalchemy import NullPool, create_engine
 
 from app.core.config import settings
 from app.models import Base
@@ -19,7 +19,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    engine = create_engine(settings.database_url)
+    # NullPool closes the connection when migrations finish instead of keeping it pooled,
+    # which matters when migrations run inside another process such as the test suite.
+    engine = create_engine(settings.database_url, poolclass=NullPool)
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
