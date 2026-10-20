@@ -5,7 +5,7 @@ Tests that exercise the real app against real PostgreSQL. Object storage is repl
 | File | Covers |
 | --- | --- |
 | `conftest.py` | Fixtures: migrate once per session, empty the tables before each test, app client with fake storage |
-| `test_upload_meal.py` | `POST /api/v1/meals`: creation, replay, conflict, validation and auth failures, size limits, response media |
+| `test_upload_meal.py` | `POST /api/v1/meals`: creation, replay (also with the same instant in another timezone offset), conflict when any field changes, validation and auth failures, size limits, response media |
 | `test_outages.py` | Storage or database outages return 503, and a retry with the same key then succeeds |
 | `test_migrations.py` | Downgrade/upgrade round trip; models match the migrated schema; constraint names follow the convention |
 | `test_lifespan.py` | Shutdown closes the storage client and every database connection |

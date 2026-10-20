@@ -67,7 +67,7 @@ def create_meal(
     info = inspect_image(photo)
 
     photo_sha256 = hashlib.sha256(photo).hexdigest()
-    payload_hash = request_hash(submission.captured_at, submission.meal_type, notes, photo_sha256)
+    payload_hash = _request_hash(submission.captured_at, submission.meal_type, notes, photo_sha256)
 
     existing = repository.find_by_idempotency_key(session, owner_id, idempotency_key)
     if existing is not None:
@@ -115,7 +115,7 @@ def create_meal(
     return CreateResult(meal, replayed=False)
 
 
-def request_hash(captured_at: datetime, meal_type: MealType, notes: str | None, photo_sha256: str) -> str:
+def _request_hash(captured_at: datetime, meal_type: MealType, notes: str | None, photo_sha256: str) -> str:
     """Fingerprint of a submission; the instant is normalised to UTC and receipt time is excluded."""
     normalized = {
         "capturedAt": captured_at.astimezone(UTC).isoformat(),

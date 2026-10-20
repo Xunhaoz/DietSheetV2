@@ -1,5 +1,7 @@
 import uuid
+from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
@@ -47,12 +49,34 @@ def test_replay_with_same_payload_returns_the_original_meal(client: TestClient, 
     assert len(storage.objects) == 1
 
 
-def test_same_key_with_different_payload_conflicts(client: TestClient) -> None:
+def test_replay_in_another_timezone_offset_is_the_same_submission(client: TestClient) -> None:
     # Arrange
-    upload(client, key=USER_KEY, notes="rice")
+    first = upload(client, key=USER_KEY, capturedAt="2026-10-18T12:30:00+08:00")
+
+    # Act: the same instant written in UTC
+    replay = upload(client, key=USER_KEY, capturedAt="2026-10-18T04:30:00Z")
+
+    # Assert
+    assert replay.status_code == 200
+    assert replay.json()["id"] == first.json()["id"]
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        {"capturedAt": "2026-10-18T12:31:00+08:00"},
+        {"mealType": "dinner"},
+        {"notes": "noodles"},
+        {"photo": make_jpeg(1024, 768)},
+    ],
+    ids=["capturedAt", "mealType", "notes", "photo"],
+)
+def test_same_key_with_different_payload_conflicts(client: TestClient, changed: dict[str, Any]) -> None:
+    # Arrange
+    upload(client, key=USER_KEY)
 
     # Act
-    response = upload(client, key=USER_KEY, notes="noodles")
+    response = upload(client, key=USER_KEY, **changed)
 
     # Assert
     assert response.status_code == 409

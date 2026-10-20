@@ -5,7 +5,6 @@ Fast tests that run without Postgres, S3 or the network. `uv run pytest` runs th
 | File | Covers |
 | --- | --- |
 | `test_images.py` | Photo rules: formats, long edge, ratio, EXIF rotation, forged headers, fuzzed damaged files |
-| `test_request_hash.py` | Submission fingerprint: equal for the same instant in any offset, different for any changed field |
 | `test_meal_response.py` | Response `media` exposes only public variants, keyed by kind |
 | `test_body_limit.py` | Request size middleware: pass, 413 with connection close, 411 for chunked bodies |
 | `test_config.py` | Token minimum length, and that the token never appears in errors or `repr` |
